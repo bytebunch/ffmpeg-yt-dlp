@@ -232,10 +232,10 @@ describe('playlists, batches, archive, ZIP and comment jobs (fake yt-dlp, Postgr
     it('applies max_items, and reverse changes the download order (not the indices)', async () => {
       const result = await indices({ max_items: 3, reverse: true });
       expect(result.items.map((item) => item.index)).toEqual([1, 2, 3]);
-      const byStart = [...result.items].sort((a, b) =>
-        (a.started_at ?? '').localeCompare(b.started_at ?? ''),
-      );
-      expect(byStart.map((item) => item.index)[0]).toBe(3);
+      // Items are released in creation order (time-ordered ids, item-feeder.spec.ts); their start
+      // times would race between the user's concurrent slots.
+      const byCreation = [...result.items].sort((a, b) => a.id.localeCompare(b.id));
+      expect(byCreation.map((item) => item.index)).toEqual([3, 2, 1]);
     });
 
     it('filters on metadata from the expansion', async () => {

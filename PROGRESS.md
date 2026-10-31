@@ -9,7 +9,7 @@ repository.
 
 ## Status (2026-10-31)
 
-Milestones 1–10 of SPEC §18 are built and tested on the Mac. Latest totals: `pnpm check` 724/724,
+Milestones 1–10 of SPEC §18 are built and tested on the Mac. Latest totals: `pnpm check` 725/725,
 Playwright 6/6, live YouTube tests 7/7, deploy tests 64 (53 Bats, 6 real-packet firewall, 5 nginx),
 ffmpeg image acceptance, e2e 68 checks. The installer was then reviewed with the user point by
 point (see "Installer review" at the end).
@@ -1072,3 +1072,15 @@ changes were made.
 - **Totals: shellcheck and actionlint clean; e2e with the allowance on and YouTube reachable 68/68
   with no skips; e2e with the probe forced to "blocked" 64 passed + 4 YouTube checks skipped with
   the warning. The Linux permission fixes can only be confirmed on the next CI run.**
+
+### Third CI run: a racy playlist test, and a real ordering bug behind it ✅
+- `playlists.spec` "reverse changes the download order" sorted items by `started_at`; with
+  `USER_MAX_CONCURRENT_ITEMS=2` items 3 and 2 start together, so which started first was a race
+  (CI got item 2). It now checks creation order (time-ordered ids), which is what `reverse` sets.
+- Behind it, a real bug: the feeder picked items `ORDER BY id` but queued them in `UPDATE …
+  RETURNING` order, which is storage order. A retried item's row moves (its indexed status
+  changes), so after a retry the feeder could release item 2 before item 3, losing `reverse` and
+  `random` order. New `item-feeder.spec.ts` reproduces it (reversed playlist, item 3 failed and
+  retried): it failed on the old code with [item 2, item 3]. Fix: queue in the SELECT's order.
+  Same class as the watch-runner `RETURNING` fix.
+- **Totals: the playlist test 20/20 runs; `pnpm check` 725/725.**

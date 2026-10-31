@@ -143,9 +143,11 @@ export class ItemCoordinator {
           eq(jobs.stage, 'waiting'),
         ),
       )
-      .returning({ id: jobs.id, attempts: jobs.attempts });
+      .returning({ id: jobs.id });
+    // RETURNING follows storage order (a retried item's row moves); release in creation order.
+    const fedIds = new Set(fed.map((row) => row.id));
     // Attempt-numbered queue ids: BullMQ ignores an id it still remembers from a failed run.
-    for (const { id, attempts } of fed) {
+    for (const { id, attempts } of waiting.filter((row) => fedIds.has(row.id))) {
       await this.queue.add(DOWNLOAD_QUEUE, { jobId: id }, queueJobOptions(id, attempts));
     }
     return fed.length;
