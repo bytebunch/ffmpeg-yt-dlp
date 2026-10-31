@@ -1102,3 +1102,16 @@ changes were made.
   `[info]` line to stderr like its downloads, so a recording has a log to check (with the old
   record executor that assertion failed, with the fix it passes).
 - **Totals: `pnpm check` 729/729; `downloads.spec` 10/10 runs; e2e 68/68.**
+
+### Fifth CI run: recipe jobs had the same completion-order bug ✅
+- `process.spec` "runs a recipe…" found the work directory still there right after `completed`:
+  the recipe executor (worker-ff) committed the final status in `complete()` and in the recipe
+  dedup `reuse()`, and `concatItems` likewise, before its `finally` removed `.work/<jobId>`.
+- Fix: a run-once `cleanup` in `execute()` and `concatItems()`, run right before those commits
+  (all outputs are already moved out by `place()`); the `finally` blocks still call it. Swept the
+  other finishing paths: comments, probe, Drive delivery, `failed` (set after the executor's
+  cleanup) and playlist parents use no work directory.
+- Test that failed first, deterministically: `process.spec` spies on the worker's
+  `JobFinisher.announce` (called right after the finishing commit) and records whether the work
+  directory still existed; with the old executor it did for a recipe and for `concat_items`.
+- **Totals: `pnpm check` 729/729; `process.spec` 10/10 runs; e2e 68/68.**

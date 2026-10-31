@@ -8,6 +8,7 @@ import type { Redis } from 'ioredis';
 
 import { AppError } from '../common/errors';
 import { uuidv7 } from '../common/ids';
+import { once } from '../common/once';
 import { APP_CONFIG, DATABASE, REDIS } from '../common/tokens';
 import type { AppConfig } from '../config/env.schema';
 import type { Database } from '../db/database';
@@ -125,6 +126,9 @@ export class ProcessExecutor {
     const pipeline = job.type !== 'process';
     const options = job.options as StoredOptions;
     const workDir = path.join(this.config.FILES_DIR, '.work', job.id);
+    // A job reports finished only once its work directory is gone: complete() and reuse() run
+    // this right before that commit, and the finally block covers every other end.
+    const cleanup = once(() => rm(workDir, { recursive: true, force: true }));
     await this.setState(
       job.id,
       pipeline
@@ -143,7 +147,7 @@ export class ProcessExecutor {
         !pipeline && identities.every(Boolean)
           ? recipeKey(identities.join('|'), recipe)
           : undefined;
-      if (key && (await this.reuse(job, key))) return;
+      if (key && (await this.reuse(job, key, cleanup))) return;
       await rm(workDir, { recursive: true, force: true });
       await this.setState(job.id, { stage: 'processing' });
       const rows: OutputRow[] = [];
@@ -160,12 +164,12 @@ export class ProcessExecutor {
         pipeline && options.keep_original !== true
           ? runs.flatMap(([main]) => (main?.outputId ? [main.outputId] : []))
           : [];
-      await this.complete(job, rows, replaced, key);
+      await this.complete(job, rows, replaced, cleanup, key);
     } catch (error) {
       if (!signal.aborted) throw error;
       cancelled = true;
     } finally {
-      await rm(workDir, { recursive: true, force: true });
+      await cleanup();
     }
     // Marked after cleanup, so a cancelled job never leaves its work directory behind.
     if (cancelled)
@@ -178,6 +182,7 @@ export class ProcessExecutor {
    */
   private async concatItems(job: Job, signal: AbortSignal): Promise<void> {
     const workDir = path.join(this.config.FILES_DIR, '.work', job.id);
+    const cleanup = once(() => rm(workDir, { recursive: true, force: true }));
     const counts = await this.coordinator.counts(job.id);
     // The coordinator hands a parent over only when some items completed.
     const finished = finalStatus(counts) === 'completed' ? 'completed' : 'completed_with_errors';
@@ -225,8 +230,9 @@ export class ProcessExecutor {
       await rm(workDir, { recursive: true, force: true });
       const result = await this.run(job, recipe, sources, { workDir, signal, index: 0, count: 1 });
       const placed = await this.place(job, 'playlist', result);
-      await this.complete(job, placed, [], undefined, finished);
+      await this.complete(job, placed, [], cleanup, undefined, finished);
     } catch (error) {
+      await cleanup();
       if (signal.aborted) {
         await this.setState(job.id, { status: 'cancelled', stage: null, finishedAt: new Date() });
         return;
@@ -241,7 +247,7 @@ export class ProcessExecutor {
         finishedAt: new Date(),
       });
     } finally {
-      await rm(workDir, { recursive: true, force: true });
+      await cleanup();
     }
   }
 
@@ -481,11 +487,13 @@ export class ProcessExecutor {
     job: Job,
     rows: OutputRow[],
     replaced: string[],
+    cleanup: () => Promise<void>,
     key?: DedupKey,
     status: 'completed' | 'completed_with_errors' = 'completed',
   ): Promise<void> {
     await this.setState(job.id, { stage: 'finalizing' });
     const expiresAt = new Date(Date.now() + this.config.FILE_TTL_DAYS * 86_400_000);
+    await cleanup();
     await this.db.transaction(async (tx) => {
       // The dedup entry points at this job's outputs, like a download's (SPEC §9d).
       const [mediaFile] = key
@@ -531,7 +539,7 @@ export class ProcessExecutor {
   }
 
   /** A finished identical recipe on the same content: copy its outputs instead of running ffmpeg. */
-  private async reuse(job: Job, key: DedupKey): Promise<boolean> {
+  private async reuse(job: Job, key: DedupKey, cleanup: () => Promise<void>): Promise<boolean> {
     const now = new Date();
     const safetyMargin = new Date(now.getTime() + 3_600_000);
     const [cached] = await this.db
@@ -559,6 +567,7 @@ export class ProcessExecutor {
       );
     if (source.length === 0) return false;
     const expiresAt = new Date(now.getTime() + this.config.FILE_TTL_DAYS * 86_400_000);
+    await cleanup();
     await this.db.transaction(async (tx) => {
       await tx.insert(outputs).values(
         source.map(({ id: _id, createdAt: _createdAt, ...output }) => ({

@@ -6,10 +6,11 @@ import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import type { StartedRedisContainer } from '@testcontainers/redis';
 import { Redis } from 'ioredis';
 import type { Pool } from 'pg';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { ApiKeyService } from '../../../src/auth/api-keys';
 import { createDatabase } from '../../../src/db/database';
+import { JobFinisher } from '../../../src/drive/job-finisher';
 import { runMigrations } from '../../../src/db/migrations';
 import type { JobView } from '../../../src/jobs/jobs.service';
 import { poolFor, startPostgres, startRedis } from '../support/containers';
@@ -31,6 +32,8 @@ describe('process jobs: recipes on worker-ff (Postgres + Redis + ffmpeg 8.1)', (
   let stack: JobStack;
   let clientId: string;
   const auth: Record<string, string> = {};
+  /** Whether a job's work directory still existed when its final status was announced. */
+  const workDirAtAnnounce = new Map<string, boolean>();
 
   beforeAll(async () => {
     await ensureFakeMedia();
@@ -52,9 +55,16 @@ describe('process jobs: recipes on worker-ff (Postgres + Redis + ffmpeg 8.1)', (
       },
       auth,
     );
+    const finisher = stack.worker.get(JobFinisher);
+    const announce = finisher.announce.bind(finisher);
+    vi.spyOn(finisher, 'announce').mockImplementation((job, status) => {
+      workDirAtAnnounce.set(job.id, existsSync(path.join(stack.filesDir, '.work', job.id)));
+      return announce(job, status);
+    });
   });
 
   afterAll(async () => {
+    vi.restoreAllMocks();
     await stack.close();
     await pool.end();
     await Promise.all([postgres.stop(), redis.stop()]);
@@ -104,7 +114,8 @@ describe('process jobs: recipes on worker-ff (Postgres + Redis + ffmpeg 8.1)', (
     ) as { integrated_lufs: number };
     expect(loudness.integrated_lufs).toEqual(expect.any(Number));
     expect(job.archive_url).not.toBeNull();
-    // The work directory is gone once the job ends.
+    // The work directory is gone before the job reports completed.
+    expect(workDirAtAnnounce.get(job.id)).toBe(false);
     expect(existsSync(path.join(stack.filesDir, '.work', job.id))).toBe(false);
   });
 
@@ -576,6 +587,7 @@ describe('process jobs: recipes on worker-ff (Postgres + Redis + ffmpeg 8.1)', (
       expect(joined?.name).toBe('playlist.joined.mp4');
       // Three 2-second fake videos.
       expect(joined?.duration_s).toBeCloseTo(6, 0);
+      expect(workDirAtAnnounce.get(parent.id)).toBe(false);
       const batch = await stack.waitFor(
         (
           await stack.create({
