@@ -8,6 +8,8 @@ import type { AppConfig } from '../config/env.schema';
 import * as schema from './schema';
 
 export type Database = NodePgDatabase<typeof schema>;
+/** The handle a `db.transaction` callback receives. */
+export type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
 
 type SslSettings = Pick<AppConfig, 'DATABASE_SSL_MODE' | 'DATABASE_SSL_CA_FILE'>;
 

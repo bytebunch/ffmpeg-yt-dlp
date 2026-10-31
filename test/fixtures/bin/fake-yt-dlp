@@ -198,6 +198,7 @@ async function recordLive(id, query) {
   if (stopped) fail('Interrupted by user');
   const part = path.join(home, `${id} [${id}].mp4.part`);
   fs.copyFileSync(LIVE_TS, part);
+  process.stderr.write(`[info] ${id}: Downloading 1 format(s): 96\n`);
   console.log(`[download] Destination: ${id} [${id}].mp4`);
   const until = Date.now() + Number(query.get('seconds') ?? 3600) * 1000;
   // ffmpeg=1: live HLS as yt-dlp really reports it, through ffmpeg's \r-separated stats on stderr.

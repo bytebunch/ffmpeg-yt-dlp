@@ -11,6 +11,7 @@ import { youtubeExtractorArgs } from '../access/access-args';
 import { type JobAccess, JobAccessResolver } from '../access/job-access';
 import { AppError } from '../common/errors';
 import { uuidv7 } from '../common/ids';
+import { once } from '../common/once';
 import { redactText } from '../common/redact';
 import { APP_CONFIG, DATABASE, REDIS } from '../common/tokens';
 import type { AppConfig } from '../config/env.schema';
@@ -90,7 +91,14 @@ export class RecordExecutor {
     private readonly finisher: JobFinisher,
   ) {}
 
-  async record(job: Job, workDir: string, signal: AbortSignal, log: string[]): Promise<void> {
+  /** `finalize` stores the log and removes `workDir`; it runs before the job reports finished. */
+  async record(
+    job: Job,
+    workDir: string,
+    signal: AbortSignal,
+    log: string[],
+    finalize: () => Promise<void>,
+  ): Promise<void> {
     const stored = job.options as Record<string, unknown>;
     const options = recordOptions.parse(
       Object.fromEntries(Object.entries(stored).filter(([key]) => !key.startsWith('_'))),
@@ -101,6 +109,11 @@ export class RecordExecutor {
       stored,
       path.join(workDir, '.access'),
     );
+    // The cookie copy is shredded before the work directory goes.
+    const finish = once(async () => {
+      await access.dispose();
+      await finalize();
+    });
     try {
       const url = await guardUrl(job.url ?? '', this.resolve);
       const info = asRecord(
@@ -131,6 +144,7 @@ export class RecordExecutor {
       });
       if (capture.files.length === 0) {
         if (capture.stopReason === 'cancelled') {
+          await finish();
           await this.setState(job.id, { status: 'cancelled', stage: null, finishedAt: new Date() });
           return;
         }
@@ -147,12 +161,12 @@ export class RecordExecutor {
       await this.store(
         job,
         remuxed,
-        workDir,
         options,
         capture.stopReason === 'cancelled' ? 'cancelled' : 'completed',
+        finish,
       );
     } finally {
-      await access.dispose();
+      await finish();
     }
   }
 
@@ -407,9 +421,9 @@ export class RecordExecutor {
   private async store(
     job: Job,
     files: string[],
-    workDir: string,
     options: RecordOptions,
     status: 'completed' | 'cancelled',
+    finish: () => Promise<void>,
   ): Promise<void> {
     const expiresAt = new Date(Date.now() + this.config.FILE_TTL_DAYS * 86_400_000);
     const rows: (typeof outputs.$inferInsert)[] = [];
@@ -442,12 +456,12 @@ export class RecordExecutor {
         expiresAt,
       });
     }
+    await finish();
     await this.db.transaction(async (tx) => {
       if (rows.length > 0) await tx.insert(outputs).values(rows);
       await tx.update(jobs).set(this.finisher.end(job, status)).where(eq(jobs.id, job.id));
     });
     await this.finisher.announce(job, status);
-    await rm(path.join(workDir, '.out'), { recursive: true, force: true });
   }
 
   private async setState(jobId: string, values: Partial<typeof jobs.$inferInsert>): Promise<void> {

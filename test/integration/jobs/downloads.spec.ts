@@ -22,6 +22,7 @@ import { DOWNLOAD_QUEUE } from '../../../src/jobs/queues';
 import { WorkerModule } from '../../../src/worker/worker.module';
 import type { Resolver } from '../../../src/ytdlp/url-guard';
 import { createTestApp, testConfig } from '../support/app';
+import { auditLogAtCompletion, logLinesAtCompletion } from '../support/completion-audit';
 import { poolFor, startPostgres, startRedis } from '../support/containers';
 
 const publicResolver: Resolver = () => Promise.resolve(['93.184.215.14']);
@@ -77,6 +78,7 @@ describe('download jobs: API → queue → worker-dl (fake yt-dlp, Postgres + Re
     [postgres, redis] = await Promise.all([startPostgres(), startRedis()]);
     pool = poolFor(postgres.getConnectionUri());
     await runMigrations(pool);
+    await auditLogAtCompletion(pool);
     keys = new ApiKeyService(createDatabase(pool));
     const { key } = await keys.create({ clientName: 'downloads' });
     auth = { authorization: `Bearer ${key}`, 'x-user-id': 'user-1' };
@@ -197,6 +199,10 @@ describe('download jobs: API → queue → worker-dl (fake yt-dlp, Postgres + Re
         expect(response.statusCode).toBe(404);
         expect(response.headers['x-accel-redirect']).toBeUndefined();
       }
+    });
+
+    it('stores the log before it reports completed', async () => {
+      expect(await logLinesAtCompletion(pool, job.id)).toBeGreaterThan(0);
     });
 
     it('keeps a redacted log of the yt-dlp run', async () => {

@@ -9,7 +9,7 @@ repository.
 
 ## Status (2026-10-31)
 
-Milestones 1–10 of SPEC §18 are built and tested on the Mac. Latest totals: `pnpm check` 725/725,
+Milestones 1–10 of SPEC §18 are built and tested on the Mac. Latest totals: `pnpm check` 729/729,
 Playwright 6/6, live YouTube tests 7/7, deploy tests 64 (53 Bats, 6 real-packet firewall, 5 nginx),
 ffmpeg image acceptance, e2e 68 checks. The installer was then reviewed with the user point by
 point (see "Installer review" at the end).
@@ -1084,3 +1084,21 @@ changes were made.
   retried): it failed on the old code with [item 2, item 3]. Fix: queue in the SELECT's order.
   Same class as the watch-runner `RETURNING` fix.
 - **Totals: the playlist test 20/20 runs; `pnpm check` 725/725.**
+
+### Fourth CI run: jobs reported completed before their log was stored ✅
+- Two `downloads.spec` checks failed on CI: right after `completed`, the job's log was missing and
+  `.work/<jobId>` still existed. Real ordering bug: downloads and recordings committed their final
+  status (and announced it) before the log was written, the work directory removed, the cookie
+  copy shredded and, for downloads, the archive row inserted. An API client, MCP agent or SSE
+  listener fetching the log on `completed` could get nothing; the Mac was too slow to show it.
+- Fix: `execute()` builds a run-once `finalize` (store the log, remove the work directory);
+  `runDownload()` and `record()` wrap it with `access.dispose()` and call it right before the
+  transaction that finishes the job (`store()`, `reuse()`, `skipped`, a recording cancelled
+  before any media); the `finally` blocks still call it. The archive row is now part of the
+  completing transaction. New `common/once.ts`, `Transaction` type in `db/database.ts`.
+- Tests that failed first, deterministically: `support/completion-audit.ts` adds a trigger that
+  records, inside the finishing transaction, how many log lines the job has. Old code: 0 for a
+  download and for a recording; fixed: more than 0. The fake yt-dlp's live run now prints an
+  `[info]` line to stderr like its downloads, so a recording has a log to check (with the old
+  record executor that assertion failed, with the fix it passes).
+- **Totals: `pnpm check` 729/729; `downloads.spec` 10/10 runs; e2e 68/68.**

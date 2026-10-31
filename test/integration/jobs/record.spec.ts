@@ -11,6 +11,7 @@ import { createDatabase } from '../../../src/db/database';
 import { runMigrations } from '../../../src/db/migrations';
 import type { JobView } from '../../../src/jobs/jobs.service';
 import { ffprobe } from '../../../src/media/ffprobe';
+import { auditLogAtCompletion, logLinesAtCompletion } from '../support/completion-audit';
 import { poolFor, startPostgres, startRedis } from '../support/containers';
 import { CALLS_LOG, ensureFakeMedia, type JobStack, startJobStack } from '../support/jobs';
 
@@ -58,6 +59,7 @@ describe('record jobs (Postgres + Redis + workers)', () => {
     [postgres, redis] = await Promise.all([startPostgres(), startRedis()]);
     pool = poolFor(postgres.getConnectionUri());
     await runMigrations(pool);
+    await auditLogAtCompletion(pool);
     const created = await new ApiKeyService(createDatabase(pool)).create({ clientName: 'live' });
     Object.assign(auth, { authorization: `Bearer ${created.key}`, 'x-user-id': 'alice' });
     stack = await startJobStack(
@@ -100,6 +102,8 @@ describe('record jobs (Postgres + Redis + workers)', () => {
     expect(recordLog('show')).toEqual([
       { fromStart: true, mpegts: true, wait: null, format: 'bv*+ba/b' },
     ]);
+    expect(await logLinesAtCompletion(pool, job.id)).toBeGreaterThan(0);
+    expect(existsSync(path.join(stack.filesDir, '.work', job.id))).toBe(false);
   });
 
   it('stops on cancel with SIGINT, keeps what was recorded and marks the job cancelled', async () => {

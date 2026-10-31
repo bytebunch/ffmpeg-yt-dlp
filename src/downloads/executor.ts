@@ -13,10 +13,11 @@ import { type JobAccess, JobAccessResolver } from '../access/job-access';
 import { clearSecrets, sealedPart } from '../access/sealed';
 import { AppError } from '../common/errors';
 import { uuidv7 } from '../common/ids';
+import { once } from '../common/once';
 import { redactText } from '../common/redact';
 import { APP_CONFIG, DATABASE, REDIS } from '../common/tokens';
 import type { AppConfig } from '../config/env.schema';
-import type { Database } from '../db/database';
+import type { Database, Transaction } from '../db/database';
 import {
   archive,
   clients,
@@ -119,6 +120,12 @@ export class DownloadExecutor {
     if (!job || FINISHED.includes(job.status) || job.stage === 'processing') return;
     const log: string[] = [];
     let cancelled = false;
+    // A job reports finished only once its log is stored and its work directory is gone: the
+    // executors call this right before that commit, and the finally block covers every other end.
+    const finalize = once(async () => {
+      await this.writeLog(job.id, log);
+      await rm(this.workDir(job.id), { recursive: true, force: true });
+    });
 
     await this.setState(job.id, {
       status: 'running',
@@ -129,16 +136,15 @@ export class DownloadExecutor {
       if (job.type === 'comments') await this.exportComments(job, signal);
       else if (job.type === 'probe') await this.probeInput(job, signal);
       else if (job.type === 'record')
-        await this.recorder.record(job, this.workDir(job.id), signal, log);
-      else await this.runDownload(job, signal, log);
+        await this.recorder.record(job, this.workDir(job.id), signal, log, finalize);
+      else await this.runDownload(job, signal, log, finalize);
     } catch (error) {
       if (!signal.aborted || (error instanceof AppError && error.code === 'FILE_TOO_LARGE')) {
         throw error;
       }
       cancelled = true;
     } finally {
-      await this.writeLog(job.id, log);
-      await rm(this.workDir(job.id), { recursive: true, force: true });
+      await finalize();
     }
     // Marked only after cleanup, so a cancelled job never leaves its work directory behind.
     if (cancelled) {
@@ -148,7 +154,12 @@ export class DownloadExecutor {
     }
   }
 
-  private async runDownload(job: Job, signal: AbortSignal, log: string[]): Promise<void> {
+  private async runDownload(
+    job: Job,
+    signal: AbortSignal,
+    log: string[],
+    finalize: () => Promise<void>,
+  ): Promise<void> {
     const stored = job.options as Raw;
     const { checks } = stored as { checks?: ItemChecks };
     const perItem = itemOptions(stored);
@@ -159,6 +170,11 @@ export class DownloadExecutor {
       stored,
       path.join(this.workDir(job.id), '.access'),
     );
+    // The cookie copy is shredded before the work directory goes.
+    const finish = once(async () => {
+      await access.dispose();
+      await finalize();
+    });
     try {
       const info = await this.resolveInfo(job, options, stored, access, signal);
       if (isPlaylist(info)) {
@@ -173,6 +189,7 @@ export class DownloadExecutor {
       }
       this.checkMedia(info, options);
       if (checks && !this.itemWanted(info, checks)) {
+        await finish();
         await this.setState(job.id, { status: 'skipped', stage: null, finishedAt: new Date() });
         return;
       }
@@ -189,29 +206,33 @@ export class DownloadExecutor {
       };
       if (key.mediaId === '')
         throw new AppError('EXTRACTION_FAILED', 'yt-dlp returned no media id');
-      if (!(await this.reuse(job, key))) {
-        const lock = await this.acquireLock(job.id, key, signal);
+      if (!(await this.reuse(job, key, finish))) {
+        const lock = await this.acquireLock(job.id, key, signal, finish);
         try {
-          if (lock !== 'reused' && !(await this.reuse(job, key))) {
-            await this.download(job, options, info, key, access, signal, log);
+          if (lock !== 'reused' && !(await this.reuse(job, key, finish))) {
+            await this.download(job, options, info, key, access, signal, log, finish);
           }
         } finally {
           await this.releaseLock(job.id, key);
         }
       }
-      await this.db
-        .insert(archive)
-        .values({
-          clientId: job.clientId,
-          userId: job.userId,
-          extractor: key.extractor,
-          mediaId: key.mediaId,
-          jobId: job.id,
-        })
-        .onConflictDoNothing();
     } finally {
-      await access.dispose();
+      await finish();
     }
+  }
+
+  /** Part of the transaction that completes a download, so skip_downloaded sees it at once. */
+  private async recordInArchive(tx: Transaction, job: Job, key: DedupKey): Promise<void> {
+    await tx
+      .insert(archive)
+      .values({
+        clientId: job.clientId,
+        userId: job.userId,
+        extractor: key.extractor,
+        mediaId: key.mediaId,
+        jobId: job.id,
+      })
+      .onConflictDoNothing();
   }
 
   private workDir(jobId: string): string {
@@ -478,6 +499,7 @@ export class DownloadExecutor {
     access: JobAccess,
     signal: AbortSignal,
     log: string[],
+    finish: () => Promise<void>,
   ): Promise<void> {
     const workDir = this.workDir(job.id);
     const tempDir = path.join(workDir, '.tmp');
@@ -554,7 +576,7 @@ export class DownloadExecutor {
         false,
       );
     }
-    await this.store(job, info, key, produced, workDir);
+    await this.store(job, info, key, produced, workDir, finish);
   }
 
   private async producedFiles(workDir: string): Promise<ProducedFile[]> {
@@ -576,6 +598,7 @@ export class DownloadExecutor {
     key: DedupKey,
     produced: ProducedFile[],
     workDir: string,
+    finish: () => Promise<void>,
   ): Promise<void> {
     const expiresAt = new Date(Date.now() + this.config.FILE_TTL_DAYS * 86_400_000);
     const rows: StoredRow[] = [];
@@ -603,6 +626,7 @@ export class DownloadExecutor {
       });
     }
     const main = rows.find((row) => row.role === 'media' || row.role === 'audio') ?? rows[0];
+    await finish();
     await this.db.transaction(async (tx) => {
       const [mediaFile] = await tx
         .insert(mediaFiles)
@@ -632,6 +656,7 @@ export class DownloadExecutor {
           .insert(outputs)
           .values(rows.map((row) => ({ ...row, mediaFileId: mediaFile?.id ?? null })));
       }
+      await this.recordInArchive(tx, job, key);
       await tx.update(jobs).set(this.completion(job)).where(eq(jobs.id, job.id));
     });
     await this.handOff(job);
@@ -680,7 +705,7 @@ export class DownloadExecutor {
    * SPEC §9d: a finished download with the same key is reused instantly. The new job gets its own
    * output rows pointing at the same files; cleanup deletes a file only when no output needs it.
    */
-  private async reuse(job: Job, key: DedupKey): Promise<boolean> {
+  private async reuse(job: Job, key: DedupKey, finish: () => Promise<void>): Promise<boolean> {
     const now = new Date();
     const safetyMargin = new Date(now.getTime() + 3_600_000);
     const [cached] = await this.db
@@ -709,6 +734,7 @@ export class DownloadExecutor {
       );
     if (source.length === 0) return false;
     const expiresAt = new Date(now.getTime() + this.config.FILE_TTL_DAYS * 86_400_000);
+    await finish();
     await this.db.transaction(async (tx) => {
       await tx.insert(outputs).values(
         source.map((output) => ({
@@ -731,6 +757,7 @@ export class DownloadExecutor {
         .update(mediaFiles)
         .set({ expiresAt, lastUsedAt: now })
         .where(eq(mediaFiles.id, cached.id));
+      await this.recordInArchive(tx, job, key);
       await tx.update(jobs).set(this.completion(job)).where(eq(jobs.id, job.id));
     });
     await this.handOff(job);
@@ -745,6 +772,7 @@ export class DownloadExecutor {
     jobId: string,
     key: DedupKey,
     signal: AbortSignal,
+    finish: () => Promise<void>,
   ): Promise<'acquired' | 'reused'> {
     const name = lockKey(key);
     const ttlMs = this.config.JOB_TIMEOUT_MINUTES * 60_000 + 60_000;
@@ -756,7 +784,7 @@ export class DownloadExecutor {
         await new Promise((resolve) => setTimeout(resolve, LOCK_POLL_MS));
       }
       const [job] = await this.db.select().from(jobs).where(eq(jobs.id, jobId));
-      if (job && (await this.reuse(job, key))) return 'reused';
+      if (job && (await this.reuse(job, key, finish))) return 'reused';
     }
   }
 
