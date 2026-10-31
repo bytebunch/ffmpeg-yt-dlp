@@ -2,7 +2,7 @@
 #
 # Media Service installer and updater (DEPLOY-QUICKSTART.md).
 #
-#   curl -fsSL https://raw.githubusercontent.com/<owner>/media-service/main/deploy/install.sh | sudo bash
+#   curl -fsSL https://raw.githubusercontent.com/bytebunch/ffmpeg-yt-dlp/main/deploy/install.sh | sudo bash
 #
 # First run: installs Docker, writes $MEDIA_DIR/.env with generated secrets, starts the stack on
 # http://127.0.0.1:8085 (this server only) and prints the first API key. Later runs update to
@@ -33,8 +33,8 @@
 #           list: `models.sh env NAME...` prints the FFMPEG_WHISPER_* lines for .env and
 #           `models.sh sync ENV_FILE` downloads and verifies every model that ENV_FILE references.
 
-# Set to the real repository once it exists; until then MEDIA_IMAGE must be passed.
-readonly DEFAULT_IMAGE="ghcr.io/OWNER/media-service"
+# Where ci.yml pushes the image: ghcr.io/<repository owner>/media-service.
+readonly DEFAULT_IMAGE="ghcr.io/bytebunch/media-service"
 
 readonly APP_UID=10001                         # containers run as this UID (SPEC §17)
 readonly API_HEALTH_TIMEOUT_SECONDS=180
@@ -121,8 +121,6 @@ env_value() {  # <key> <default>: the value in $ENV_FILE, or the default when it
 }
 
 validate_settings() {
-  [[ $MEDIA_IMAGE != *OWNER* ]] \
-    || die "No image repository is configured yet. Run with MEDIA_IMAGE=ghcr.io/<owner>/media-service."
   [[ $MEDIA_IMAGE =~ ^[a-z0-9.-]+(:[0-9]+)?(/[a-z0-9._-]+)+$ ]] \
     || die "MEDIA_IMAGE '$MEDIA_IMAGE' is not an image repository such as ghcr.io/acme/media-service."
   [[ $MEDIA_VERSION =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$ ]] \

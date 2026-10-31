@@ -1028,3 +1028,14 @@ changes were made.
   `HTTP_BIND=0.0.0.0` (server address, plain-HTTP warning), and a developer's nginx in front.
 - **Totals: deploy 64 (53 Bats + 6 real-packet firewall + 5 nginx checks, `nginx -t` on the new
   `front.conf`), shellcheck clean, e2e 68 checks passed.**
+
+### Repository on GitHub ✅
+- The user made the first commit; the repository is `github.com/bytebunch/ffmpeg-yt-dlp`. The
+  branch is renamed `master` → `main`, because CI publishes images only from `main` and
+  `install.sh` pulls the `:main` tag.
+- Placeholders filled: `DEFAULT_IMAGE=ghcr.io/bytebunch/media-service` in `install.sh`, the install
+  URL `raw.githubusercontent.com/bytebunch/ffmpeg-yt-dlp/main/deploy/install.sh` in
+  DEPLOY-QUICKSTART.md, `ghcr.io/bytebunch` in DEPLOY.md and `.env.example`. The "placeholder
+  repository is refused" check and its test are gone; a new test installs without `MEDIA_IMAGE`
+  and pulls `ghcr.io/bytebunch/media-service:main`.
+- **Totals: deploy 64 (53 Bats + 6 firewall + 5 nginx), shellcheck clean.**

@@ -13,13 +13,13 @@ One command on a fresh server. Every setting has a working default, so nothing n
 ## Deploy
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/<owner>/media-service/main/deploy/install.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/bytebunch/ffmpeg-yt-dlp/main/deploy/install.sh | sudo bash
 ```
 
 If the repo and images are private, pass a GitHub token with repo read and `read:packages`:
 
 ```bash
-curl -fsSL -H "Authorization: token $GH_TOKEN" https://raw.githubusercontent.com/<owner>/media-service/main/deploy/install.sh | sudo GH_TOKEN="$GH_TOKEN" bash
+curl -fsSL -H "Authorization: token $GH_TOKEN" https://raw.githubusercontent.com/bytebunch/ffmpeg-yt-dlp/main/deploy/install.sh | sudo GH_TOKEN="$GH_TOKEN" bash
 ```
 
 It takes 5–10 minutes, mostly the image pull and ~1 GB of whisper models. When it finishes:
@@ -132,7 +132,7 @@ To move file serving to the host nginx itself instead of the bundled one, follow
 ## Update and roll back
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/<owner>/media-service/main/deploy/install.sh | sudo bash   # update to the newest build
+curl -fsSL https://raw.githubusercontent.com/bytebunch/ffmpeg-yt-dlp/main/deploy/install.sh | sudo bash   # update to the newest build
 cd /srv/media && sudo ./deploy.sh <git-sha>                                                            # pin a version or roll back
 ```
 

@@ -127,7 +127,6 @@ call_line() {  # <pattern>: line number of the first recorded call matching patt
     MEDIA_FILES_PATH=/srv/media/files HTTP_PORT=8085 HTTP_BIND=127.0.0.1 MODELS=all PUBLIC_BASE_URL=
   }
   for case in \
-    "MEDIA_IMAGE=ghcr.io/OWNER/media-service|No image repository" \
     "MEDIA_IMAGE=Not/An:Image!|MEDIA_IMAGE" \
     "MEDIA_VERSION=../x|MEDIA_VERSION" \
     "MEDIA_DIR=relative/path|MEDIA_DIR" \
@@ -338,10 +337,11 @@ call_line() {  # <pattern>: line number of the first recorded call matching patt
   [ ! -e "$MEDIA" ]
 }
 
-@test "without MEDIA_IMAGE the placeholder repository is refused" {
+@test "without MEDIA_IMAGE the project's own image is installed" {
   run_installer MEDIA_DIR="$MEDIA"
-  [ "$status" -eq 1 ]
-  [[ $output == *"No image repository is configured yet"* ]]
+  [ "$status" -eq 0 ]
+  grep -q "docker pull ghcr.io/bytebunch/media-service:main" "$CALLS_LOG"
+  [ "$(get_env_var "$MEDIA/.env" MEDIA_IMAGE)" = ghcr.io/bytebunch/media-service ]
 }
 
 @test "without AVX2 the install continues with transcription off" {

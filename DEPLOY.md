@@ -4,7 +4,7 @@ Status: **Plan** · Last updated: 2026-10-31 · Matches SPEC v2 §2, §13, §17 
 
 This is the full production setup: host nginx serving files directly, a separate files volume, monitoring and backups. The quick deploy runs the same stack with a bundled nginx container on `127.0.0.1:8085` (this server only) and can be moved to this setup later.
 
-Commands assume an **Ubuntu LTS (24.04 or 26.04) amd64** server. `dl.<domain>` and `ghcr.io/<owner>` are placeholders until the subdomain and GitHub owner are chosen. The repo's `deploy/` folder is copied to `/srv/media` on the server: `docker-compose.yml`, `.env.example`, `install.sh`, `deploy.sh`, `smoke.sh`, `models.sh`, `nginx/media.conf` (vhost), `nginx/media-zones.conf` (rate-limit zones), `nginx/front.conf` (TLS front for the bundled proxy), `host/egress-firewall.sh` and `host/media-egress-firewall.service`. These are written during development; this document defines what they must do.
+Commands assume an **Ubuntu LTS (24.04 or 26.04) amd64** server. `dl.<domain>` is a placeholder until the subdomain is chosen. The code lives in `github.com/bytebunch/ffmpeg-yt-dlp` and the images in `ghcr.io/bytebunch`. The repo's `deploy/` folder is copied to `/srv/media` on the server: `docker-compose.yml`, `.env.example`, `install.sh`, `deploy.sh`, `smoke.sh`, `models.sh`, `nginx/media.conf` (vhost), `nginx/media-zones.conf` (rate-limit zones), `nginx/front.conf` (TLS front for the bundled proxy), `host/egress-firewall.sh` and `host/media-egress-firewall.service`. These are written during development; this document defines what they must do.
 
 ---
 
@@ -14,8 +14,8 @@ Commands assume an **Ubuntu LTS (24.04 or 26.04) amd64** server. `dl.<domain>` a
 GitHub ── push ──▶ Actions: lint · types · unit · integration · real-binary tests
                                    │
                                    ▼
-                  ghcr.io/<owner>/media-service:<git-sha>
-                  (FROM ghcr.io/<owner>/media-ffmpeg — ffmpeg 8.1 + whisper)
+                  ghcr.io/bytebunch/media-service:<git-sha>
+                  (FROM ghcr.io/bytebunch/media-ffmpeg — ffmpeg 8.1 + whisper)
                                    │  docker compose pull
                                    ▼
  VPS ─ nginx (host, TLS) ──▶ api (127.0.0.1) ──▶ Postgres, Redis (bundled or external)
@@ -279,8 +279,8 @@ FFMPEG_WHISPER_VAD_MODEL=/models/ggml-silero-v6.2.0.bin
 
 | Image | Contents | Rebuilt |
 |---|---|---|
-| `ghcr.io/<owner>/media-ffmpeg:n8.1.3-w1.9.5-r<N>` | Debian trixie-slim. **FFmpeg n8.1.3 built from source** with `--enable-gpl --enable-whisper` and the SPEC §2 library set (from Debian `-dev` packages). **whisper.cpp v1.9.5**, static, CPU only: `GGML_NATIVE=OFF` with AVX2/FMA/F16C/BMI2 | On a version bump in `docker/ffmpeg/`, and monthly for Debian security updates |
-| `ghcr.io/<owner>/media-service:<git-sha>` | `FROM media-ffmpeg@sha256:…`; Node 24; yt-dlp venv (`default`, `curl-cffi`, mutagen, PO-token plugin); deno; fonts; the app. Non-root UID 10001, read-only root FS | Every push to `main`; weekly with the latest yt-dlp; manual "rebuild now" |
+| `ghcr.io/bytebunch/media-ffmpeg:n8.1.3-w1.9.5-r<N>` | Debian trixie-slim. **FFmpeg n8.1.3 built from source** with `--enable-gpl --enable-whisper` and the SPEC §2 library set (from Debian `-dev` packages). **whisper.cpp v1.9.5**, static, CPU only: `GGML_NATIVE=OFF` with AVX2/FMA/F16C/BMI2 | On a version bump in `docker/ffmpeg/`, and monthly for Debian security updates |
+| `ghcr.io/bytebunch/media-service:<git-sha>` | `FROM media-ffmpeg@sha256:…`; Node 24; yt-dlp venv (`default`, `curl-cffi`, mutagen, PO-token plugin); deno; fonts; the app. Non-root UID 10001, read-only root FS | Every push to `main`; weekly with the latest yt-dlp; manual "rebuild now" |
 
 - **Why our own ffmpeg build:** BtbN's releases ship whisper switched off (their `50-whisper.sh` never enables it), so the BtbN download in SPEC v2 is replaced by this image.
 - **Why `GGML_NATIVE=OFF`:** a native build targets the CI runner's CPU and can crash on the server with "illegal instruction". AVX2 is the baseline; §2b checks the server has it.
