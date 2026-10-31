@@ -20,6 +20,9 @@ export function testConfig(env: Record<string, string>): AppConfig {
     LOG_LEVEL: 'silent',
     YTDLP_BIN: FAKE_YTDLP,
     YTDLP_CACHE_DIR: '/tmp/ytdlp-test-cache',
+    // Test hosts' disks are often fuller than the production quota (GitHub runners: ~87%), and
+    // the disk guard would refuse every job. The guard's own test sets a low quota explicitly.
+    DISK_QUOTA_PERCENT: '99',
     ...env,
   });
 }

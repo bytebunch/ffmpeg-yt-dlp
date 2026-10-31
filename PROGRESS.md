@@ -1039,3 +1039,16 @@ changes were made.
   repository is refused" check and its test are gone; a new test installs without `MEDIA_IMAGE`
   and pulls `ghcr.io/bytebunch/media-service:main`.
 - **Totals: deploy 64 (53 Bats + 6 firewall + 5 nginx), shellcheck clean.**
+
+### First CI run on GitHub: tests depended on the host's free disk ✅
+- 70 integration tests failed on the runner with `507 STORAGE_FULL … used_percent: 87`: after the
+  image builds the runner's disk was 87% full, above the default `DISK_QUOTA_PERCENT=80`, so the
+  disk guard refused every job (the rest were knock-on failures). The Mac toolbox disk is 5% full,
+  so it never showed locally.
+- Reproduced without code changes: the 9 failing files in the toolbox with `/tmp` on a 1 GB tmpfs
+  filled to 87% → the same 10 failures in the two files tried, same error.
+- Fix (tests only): `testConfig` defaults `DISK_QUOTA_PERCENT` to 99, as `e2e.sh` and the live
+  tests already did; the now redundant override in `test/live/youtube.spec.ts` is removed. The
+  guard's own test still sets a quota of 1.
+- **Totals: the 9 files on the 87%-full disk 142/142, the guard test alone passes there,
+  `pnpm check` 724/724.**

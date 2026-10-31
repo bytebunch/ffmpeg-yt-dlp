@@ -127,7 +127,6 @@ describe('live: a real YouTube playlist through API and worker', () => {
         REDIS_URL: redis.getConnectionUrl(),
         YTDLP_BIN: 'yt-dlp',
         DENO_BIN: '/usr/local/bin/deno',
-        DISK_QUOTA_PERCENT: '99',
       },
       auth,
       { realDns: true },
