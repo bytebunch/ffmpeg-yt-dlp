@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Test double for iptables: records the call; STUB_IPTABLES_EXIT simulates a missing chain.
+printf 'iptables %s\n' "$*" >>"$CALLS_LOG"
+exit "${STUB_IPTABLES_EXIT:-0}"

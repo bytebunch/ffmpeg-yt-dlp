@@ -1,0 +1,42 @@
+# Daily canary (SPEC §16): real YouTube metadata, playlist expansion, downloads, a then recipe,
+# transcripts and comments with the pinned yt-dlp. A failure means an extractor broke or the CI
+# IP is being challenged; run the Rebuild workflow with a newer yt-dlp. Optional CANARY_PING_URL
+# secret: pinged on success, "<url>/fail" on failure.
+name: Canary
+
+on:
+  schedule:
+    - cron: '23 5 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  canary:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+      - uses: docker/setup-buildx-action@v3
+      - name: Build media-ffmpeg
+        uses: docker/build-push-action@v6
+        with:
+          context: docker/ffmpeg
+          tags: media-ffmpeg:ci
+          load: true
+          cache-from: type=gha,scope=media-ffmpeg
+      - name: Build the toolbox image
+        run: docker build --build-arg FFMPEG_IMAGE=media-ffmpeg:ci -t media-dev:latest docker/dev
+      - name: Install dependencies
+        run: ./dev pnpm install --frozen-lockfile
+      - name: Live tests against YouTube
+        run: ./dev pnpm test:live
+      - name: Ping
+        if: always()
+        env:
+          PING_URL: ${{ secrets.CANARY_PING_URL }}
+          OUTCOME: ${{ job.status }}
+        run: |
+          [ -n "$PING_URL" ] || exit 0
+          if [ "$OUTCOME" = success ]; then curl -fsS -m 10 --retry 3 "$PING_URL"; else curl -fsS -m 10 --retry 3 "$PING_URL/fail"; fi

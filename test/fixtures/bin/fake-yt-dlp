@@ -1,0 +1,405 @@
+#!/usr/bin/env node
+// Test double for yt-dlp. The runner passes a minimal environment, so behaviour is chosen by
+// the URL; JSON answers echo the arguments, environment and working directory received.
+// Fixtures in ../ytdlp are trimmed captures of real yt-dlp 2026.10.26 output.
+'use strict';
+const fs = require('node:fs');
+const path = require('node:path');
+
+const args = process.argv.slice(2);
+const separator = args.indexOf('--');
+const url = separator >= 0 ? args[separator + 1] : undefined;
+const echo = { args, env: process.env, cwd: process.cwd() };
+const fixtures = path.join(__dirname, '..', 'ytdlp');
+
+const has = (flag) => args.includes(flag);
+const value = (flag) => (has(flag) ? args[args.indexOf(flag) + 1] : undefined);
+const fixture = (name) => JSON.parse(fs.readFileSync(path.join(fixtures, `${name}.json`), 'utf8'));
+
+function fail(message) {
+  process.stderr.write(`[debug] fake\nERROR: ${message}\n`);
+  process.exit(1);
+}
+
+function print(document) {
+  if (has('-J')) console.log(JSON.stringify({ ...document, _fake: echo }));
+}
+
+/** `-I` as yt-dlp reads it: "a:b", "n" and "-n" parts, comma-separated, 1-based, inclusive. */
+function itemIndices(length) {
+  const spec = value('-I');
+  if (!spec) return Array.from({ length }, (_, i) => i + 1);
+  const indices = [];
+  for (const part of spec.split(',')) {
+    if (part.includes(':')) {
+      const [start, end] = part.split(':').map(Number);
+      for (let i = start; i <= Math.min(end, length); i++) indices.push(i);
+    } else {
+      const n = Number(part);
+      const index = n < 0 ? length + n + 1 : n;
+      if (index >= 1 && index <= length) indices.push(index);
+    }
+  }
+  return indices;
+}
+
+function itemRange(list) {
+  return itemIndices(list.length).map((index) => list[index - 1]);
+}
+
+function playlist() {
+  const base = fixture('playlist');
+  const template = base.entries[0];
+  fs.appendFileSync(CALLS_LOG, `expand ${url}\n`);
+  let all = Array.from({ length: 10 }, (_, i) => ({
+    ...template,
+    id: `vid${i + 1}`,
+    title: `Video ${i + 1}`,
+    url: `https://fake.test/item/vid${i + 1}`,
+    duration: 60 * (i + 1),
+    ie_key: 'Youtube',
+  }));
+  const end = value('--playlist-end');
+  if (end) all = all.slice(0, Number(end));
+  print({
+    ...base,
+    playlist_count: 10,
+    entries: itemRange(all),
+    requested_entries: itemIndices(all.length),
+  });
+}
+
+function search(count) {
+  const base = fixture('search');
+  const all = Array.from({ length: 30 }, (_, i) => ({
+    ...base.entries[i % base.entries.length],
+    id: `result${i + 1}`,
+  }));
+  print({ ...base, entries: itemRange(all).slice(0, count) });
+}
+
+/** Writes subtitle files as yt-dlp does: manual tracks first, then automatic captions. */
+function writeSubtitles(info) {
+  const langs = (value('--sub-langs') ?? 'en').split(',');
+  const formats = (value('--sub-format') ?? 'best').split('/');
+  const available = fs.readdirSync(path.join(fixtures, 'subs'));
+  for (const lang of langs) {
+    const manual = has('--write-subs') && lang in (info.subtitles ?? {});
+    const auto = has('--write-auto-subs') && lang in (info.automatic_captions ?? {});
+    if (!manual && !auto) continue;
+    const files = available.filter((name) => name.startsWith(`${info.id}.${lang}.`));
+    const preferred =
+      formats.map((ext) => files.find((name) => name.endsWith(`.${ext}`))).find(Boolean) ??
+      files[0];
+    if (preferred)
+      fs.copyFileSync(path.join(fixtures, 'subs', preferred), path.join(process.cwd(), preferred));
+  }
+}
+
+function video(extra = {}) {
+  const info = { ...fixture('video'), ...extra };
+  if (has('--write-info-json')) {
+    fs.writeFileSync(path.join(process.cwd(), `${info.id}.info.json`), JSON.stringify(info));
+  }
+  if (has('--write-subs') || has('--write-auto-subs')) writeSubtitles(info);
+  if (has('--write-comments')) Object.assign(info, fixture('comments'));
+  print(info);
+}
+
+const CALLS_LOG = '/tmp/fake-yt-dlp-calls.log';
+
+/** The access flags of this run (SPEC §7f), logged for /members, /locked and /login. */
+function accessReport(name) {
+  const cookies = value('--cookies');
+  const jar = cookies && fs.existsSync(cookies) ? fs.readFileSync(cookies, 'utf8') : '';
+  const sid = /\tSID\t(\S+)/.exec(jar)?.[1] ?? null;
+  const extractorArgs = args.filter((arg, i) => args[i - 1] === '--extractor-args');
+  fs.appendFileSync(
+    CALLS_LOG,
+    `access ${name} ${JSON.stringify({
+      sid,
+      proxy: value('--proxy') ?? null,
+      xff: value('--xff') ?? null,
+      markWatched: has('--mark-watched'),
+      extractorArgs,
+      username: value('--username') ?? null,
+      twofactor: value('--twofactor') ?? null,
+      videoPassword: value('--video-password') ?? null,
+      apMso: value('--ap-mso') ?? null,
+    })}\n`,
+  );
+  return { sid };
+}
+
+/** Private media: each needs its own kind of access, as on a real site. */
+function guarded(name) {
+  const { sid } = accessReport(name);
+  if (name === 'members' && sid === null)
+    fail(
+      '[youtube] members: Join this channel to get access to members-only content like this video',
+    );
+  if (name === 'locked' && value('--video-password') !== 'opensesame')
+    fail('[vimeo] locked: This video is protected by a password, use the --video-password option');
+  if (
+    name === 'login' &&
+    (value('--username') === undefined || !/^\d{6}$/.test(value('--twofactor') ?? ''))
+  )
+    fail(
+      '[fake] login: This video is only available for registered users. Use --username and --password',
+    );
+}
+const MEDIA = '/tmp/fake-media/clip.mp4';
+const LIVE_TS = '/tmp/fake-media/live.ts';
+
+/** Metadata of /live/<id>, /upcoming/<id> and /ended/<id> (query: far=1 starts in two days). */
+function liveInfo(kind, id, query) {
+  const status = { live: 'is_live', upcoming: 'is_upcoming', ended: 'was_live' }[kind];
+  const release = Math.floor(Date.now() / 1000) + (query.get('far') === '1' ? 2 * 86_400 : 30);
+  print({
+    ...fixture('video'),
+    id,
+    title: id,
+    duration: kind === 'ended' ? 600 : undefined,
+    live_status: status,
+    is_live: kind === 'live',
+    release_timestamp: kind === 'upcoming' ? release : undefined,
+    subtitles: {},
+    automatic_captions: {},
+  });
+}
+
+/**
+ * A live recording run: "waits" for wait_ms, then records until SIGINT or `seconds`. On SIGINT
+ * it finalises the file and exits 0, as yt-dlp's ffmpeg downloader does; with crash=1 it leaves
+ * the .part behind and exits 1 instead.
+ */
+async function recordLive(id, query) {
+  fs.appendFileSync(
+    CALLS_LOG,
+    `record ${id} ${JSON.stringify({
+      fromStart: has('--live-from-start'),
+      mpegts: has('--hls-use-mpegts'),
+      wait: value('--wait-for-video') ?? null,
+      format: value('-f') ?? null,
+    })}\n`,
+  );
+  const home = (
+    args.filter((arg, i) => args[i - 1] === '--paths' && arg.startsWith('home:'))[0] ?? 'home:.'
+  ).slice(5);
+  let stopped = false;
+  process.on('SIGINT', () => {
+    stopped = true;
+  });
+  const waitUntil = Date.now() + Number(query.get('wait_ms') ?? 0);
+  while (Date.now() < waitUntil && !stopped) {
+    console.log('[wait] Remaining time until next attempt: 00:00:01');
+    await sleep(100);
+  }
+  if (stopped) fail('Interrupted by user');
+  const part = path.join(home, `${id} [${id}].mp4.part`);
+  fs.copyFileSync(LIVE_TS, part);
+  console.log(`[download] Destination: ${id} [${id}].mp4`);
+  const until = Date.now() + Number(query.get('seconds') ?? 3600) * 1000;
+  // ffmpeg=1: live HLS as yt-dlp really reports it, through ffmpeg's \r-separated stats on stderr.
+  const ffmpegStats = query.get('ffmpeg') === '1';
+  for (let i = 1; !stopped && Date.now() < until; i++) {
+    if (ffmpegStats) {
+      process.stderr.write(
+        `frame= ${i * 5} fps= 5 q=-1.0 size=  ${i * 100}KiB time=00:00:${String(i % 60).padStart(2, '0')}.00 bitrate= 300.0kbits/s speed=1x    \r` +
+          `[https @ 0xaaaac5861200] Opening 'https://cdn.test/videoplayback/ip/203.0.113.9/sig/SECRET${i}' for reading\n`,
+      );
+    } else {
+      console.log(
+        `MEDIA-PROGRESS ${JSON.stringify({ status: 'downloading', downloaded_bytes: i * 1000, speed: 1000 })}`,
+      );
+    }
+    await sleep(100);
+  }
+  if (stopped && query.get('crash') === '1') fail('Interrupted by user');
+  fs.renameSync(part, path.join(home, `${id} [${id}].mp4`));
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function progress(percent) {
+  const total = 1000;
+  const line = {
+    status: percent >= 100 ? 'finished' : 'downloading',
+    downloaded_bytes: (total * percent) / 100,
+    total_bytes: total,
+    speed: 250,
+    eta: 1,
+  };
+  console.log(`MEDIA-PROGRESS ${JSON.stringify(line)}`);
+}
+
+/** `--load-info-json` runs: write files into the --paths home: directory like a real download. */
+async function download() {
+  const info = JSON.parse(fs.readFileSync(value('--load-info-json'), 'utf8'));
+  fs.appendFileSync(CALLS_LOG, `download ${info.id}\n`);
+  if (['members', 'locked', 'login'].includes(info.id)) guarded(info.id);
+  const home = (
+    args.filter((arg, i) => args[i - 1] === '--paths' && arg.startsWith('home:'))[0] ?? 'home:.'
+  ).slice(5);
+  process.stderr.write(
+    `[info] ${info.id}: Downloading 1 format(s): 18\n[download] fetching https://cdn.test/v?sig=SECRETSIG\n`,
+  );
+  switch (info.id) {
+    case 'slowdl':
+      for (let i = 0; i < 600; i++) {
+        progress(i / 6);
+        await sleep(100);
+      }
+      return;
+    case 'bigdl': {
+      const chunk = Buffer.alloc(1024 * 1024, 1);
+      for (let i = 0; i < 300; i++) {
+        fs.appendFileSync(path.join(home, 'big.mp4.part'), chunk);
+        await sleep(100);
+      }
+      return;
+    }
+    case 'faildl':
+      fail('[youtube] faildl: Unable to download video data: HTTP Error 503: Service Unavailable');
+      return;
+    case 'privatedl':
+      fail(
+        "[youtube] privatedl: Private video. Sign in if you've been granted access to this video",
+      );
+      return;
+    case 'nofile':
+      return;
+    case 'mediumdl':
+      await sleep(1500);
+      break;
+  }
+  for (const percent of [10, 55, 100]) progress(percent);
+  const base = value('-o') === '%(id)s.%(ext)s' ? info.id : `${info.title} [${info.id}]`;
+  fs.copyFileSync(MEDIA, path.join(home, `${base}.mp4`));
+  if (has('--write-subs'))
+    fs.copyFileSync(
+      path.join(fixtures, 'subs', 'jNQXAC9IVRw.en.vtt'),
+      path.join(home, `${base}.en.vtt`),
+    );
+  if (has('--write-thumbnail')) fs.writeFileSync(path.join(home, `${base}.webp`), 'RIFF....WEBP');
+  if (has('--write-info-json'))
+    fs.writeFileSync(path.join(home, `${base}.info.json`), JSON.stringify(info));
+}
+
+const liveMatch = /^\/(live|upcoming|ended)\/([\w-]+)$/.exec(url ? new URL(url).pathname : '');
+if (liveMatch) {
+  const query = new URL(url).searchParams;
+  if (has('-J')) {
+    liveInfo(liveMatch[1], liveMatch[2], query);
+    process.exit(0);
+  }
+  recordLive(liveMatch[2], query).then(
+    () => process.exit(0),
+    (error) => fail(String(error)),
+  );
+  return;
+}
+
+if (has('--load-info-json')) {
+  download().then(
+    () => process.exit(0),
+    (error) => fail(String(error)),
+  );
+  return;
+}
+
+if (has('--version')) {
+  console.log('2099.01.01');
+  process.exit(0);
+}
+
+const searchMatch = /^(ytsearch|scsearch|bilisearch|nicosearch|nicosearchdate)(\d+):/.exec(
+  url ?? '',
+);
+if (searchMatch) {
+  search(Number(searchMatch[2]));
+  process.exit(0);
+}
+
+const parsed = new URL(url);
+if (parsed.pathname === '/results') {
+  search(Number.MAX_SAFE_INTEGER);
+  process.exit(0);
+}
+if (parsed.pathname === '/playlist') {
+  playlist();
+  process.exit(0);
+}
+if (parsed.pathname === '/watch') {
+  video();
+  process.exit(0);
+}
+
+switch (parsed.pathname.split('/')[1]) {
+  case 'private':
+    fail("[youtube] abc123: Private video. Sign in if you've been granted access to this video");
+    break;
+  case 'slow':
+    setTimeout(() => {}, 120_000);
+    break;
+  case 'huge':
+    process.stdout.write('x'.repeat(2_000_000));
+    break;
+  case 'garbage':
+    console.log('this is not json');
+    break;
+  case 'crash':
+    process.stderr.write('Traceback (most recent call last):\n  File "x"\n');
+    process.exit(2);
+    break;
+  case 'echo':
+    console.log(JSON.stringify({ id: 'echo', title: 'Ünïcödé ✓', _fake: echo }));
+    break;
+  case 'video':
+    video();
+    break;
+  case 'slowdl':
+  case 'mediumdl':
+  case 'bigdl':
+  case 'faildl':
+  case 'privatedl':
+  case 'nofile': {
+    const name = parsed.pathname.split('/')[1];
+    fs.appendFileSync(CALLS_LOG, `info ${name}\n`);
+    print({ ...fixture('video'), id: name, title: name, subtitles: {}, automatic_captions: {} });
+    break;
+  }
+  case 'members':
+  case 'locked':
+  case 'login': {
+    const name = parsed.pathname.split('/')[1];
+    guarded(name);
+    print({ ...fixture('video'), id: name, title: name, subtitles: {}, automatic_captions: {} });
+    break;
+  }
+  case 'nosubs':
+    video({ subtitles: {}, automatic_captions: {} });
+    break;
+  case 'playlist':
+    playlist();
+    break;
+  case 'item': {
+    const id = parsed.pathname.split('/')[2];
+    const n = Number(id.replace('vid', ''));
+    fs.appendFileSync(CALLS_LOG, `info ${id}\n`);
+    print({
+      ...fixture('video'),
+      id,
+      title: `Video ${n}`,
+      duration: 60 * n,
+      upload_date: `2026100${Math.min(n, 9)}`,
+      subtitles: {},
+      automatic_captions: {},
+    });
+    break;
+  }
+  default:
+    fail(`[generic] Unsupported URL: ${url}`);
+}

@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Test double for docker: records each call and answers the commands install.sh uses.
+set -euo pipefail
+printf 'docker %s\n' "$*" >>"$CALLS_LOG"
+case $1 in
+  compose)
+    case $2 in
+      version) ;;
+      up) exit "${STUB_COMPOSE_UP_EXIT:-0}" ;;
+      ps) echo api-container ;;
+      exec) # compose exec -T api cli <command> <args...>
+        case $6 in
+          keys:create) printf 'mk_test_%s_0123456789abcdef\n' "$7" ;;
+          keys:revoke) ;;
+          *) exit 1 ;;
+        esac ;;
+      *) exit 1 ;;
+    esac ;;
+  login)
+    read -r password
+    printf 'docker login received %s bytes on stdin\n' "${#password}" >>"$CALLS_LOG" ;;
+  image) echo "$STUB_REVISION" ;;
+  create) echo bundle-container ;;
+  cp) cp -R "$FIXTURE_BUNDLE/." "$3" ;;
+  inspect) echo healthy ;;
+  pull | tag | rm) ;;
+  *) exit 1 ;;
+esac

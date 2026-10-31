@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Test double for dpkg --print-architecture (the test container may be arm64).
+echo "${STUB_ARCH:-amd64}"

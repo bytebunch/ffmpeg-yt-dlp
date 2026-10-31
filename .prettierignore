@@ -1,0 +1,7 @@
+dist/
+coverage/
+drizzle/
+pnpm-lock.yaml
+*.md
+deploy/
+docker/

@@ -1,0 +1,116 @@
+{
+  "id": "me at the zoo",
+  "title": "me at the zoo",
+  "_type": "playlist",
+  "entries": [
+    {
+      "_type": "url",
+      "ie_key": "Youtube",
+      "id": "jNQXAC9IVRw",
+      "url": "https://www.youtube.com/watch?v=jNQXAC9IVRw",
+      "title": "Me at the zoo",
+      "description": "Microplastics are accumulating in human brains at an alarming rate https://www.youtube.com/watch?v=0PT5c1z3LL8 ...",
+      "duration": 19,
+      "channel_id": "UC4QobU6STFB0P71PMvOGN5A",
+      "channel": "jawed",
+      "channel_url": "https://www.youtube.com/channel/UC4QobU6STFB0P71PMvOGN5A",
+      "uploader": "jawed",
+      "uploader_id": "@jawed",
+      "uploader_url": "https://www.youtube.com/@jawed",
+      "thumbnails": [
+        {
+          "url": "https://i.ytimg.com/vi/jNQXAC9IVRw/hqdefault.jpg?sqp=-oaymwFBCOADEI4CSFryq4qpAzMIARUAAIhCGAHYAQHiAQoIGBACGAY4AUAB8AEB-AG-AoAC8AGKAgwIABABGFUgWShlMA8=&rs=AOn4CLAFQvhrcznVjyQPKg7GJjilIbq-PA",
+          "height": 270,
+          "width": 480
+        }
+      ],
+      "timestamp": null,
+      "release_timestamp": null,
+      "availability": null,
+      "view_count": 447223835,
+      "live_status": null,
+      "channel_is_verified": true
+    },
+    {
+      "_type": "url",
+      "ie_key": "Youtube",
+      "id": "33_oEWPR1D0",
+      "url": "https://www.youtube.com/watch?v=33_oEWPR1D0",
+      "title": "Me At The Zoo Got Changed AGAIN?! (why?)",
+      "description": "The first video on YouTube was changed again with a new link in the description. Was the first YouTube video hacked? Why is ...",
+      "duration": 208,
+      "channel_id": "UCv5mo0iXze8aKFjvdp51Fjg",
+      "channel": "Timeworks",
+      "channel_url": "https://www.youtube.com/channel/UCv5mo0iXze8aKFjvdp51Fjg",
+      "uploader": "Timeworks",
+      "uploader_id": "@Timeworks",
+      "uploader_url": "https://www.youtube.com/@Timeworks",
+      "thumbnails": [
+        {
+          "url": "https://i.ytimg.com/vi/33_oEWPR1D0/hq720.jpg?sqp=-oaymwEnCOgCEMoBSFryq4qpAxkIARUAAIhCGAHYAQHiAQoIGBACGAY4AUAB&rs=AOn4CLDwUbHSOOaPteDYct1EpkXONI_7mg",
+          "height": 202,
+          "width": 360
+        },
+        {
+          "url": "https://i.ytimg.com/vi/33_oEWPR1D0/hq720.jpg?sqp=-oaymwEnCNAFEJQDSFryq4qpAxkIARUAAIhCGAHYAQHiAQoIGBACGAY4AUAB&rs=AOn4CLAVBOam9CEOw0QenX0W38BesxWzLw",
+          "height": 404,
+          "width": 720
+        }
+      ],
+      "timestamp": null,
+      "release_timestamp": null,
+      "availability": null,
+      "view_count": 96752,
+      "live_status": null,
+      "channel_is_verified": true
+    },
+    {
+      "_type": "url",
+      "ie_key": "Youtube",
+      "id": "C7cQ3_jD14k",
+      "url": "https://www.youtube.com/watch?v=C7cQ3_jD14k",
+      "title": "Me At The Zoo",
+      "description": "LIKE THE VIDEO Merch: https://my-store-e85bb5.creator-spring.com Business Email: sponsormemezee@gmail.com Twitter ...",
+      "duration": 35,
+      "channel_id": "UC3mB75p33VLYk3nv2SOVrmw",
+      "channel": "Meme Zee",
+      "channel_url": "https://www.youtube.com/channel/UC3mB75p33VLYk3nv2SOVrmw",
+      "uploader": "Meme Zee",
+      "uploader_id": "@MemeZee",
+      "uploader_url": "https://www.youtube.com/@MemeZee",
+      "thumbnails": [
+        {
+          "url": "https://i.ytimg.com/vi/C7cQ3_jD14k/hq720.jpg?sqp=-oaymwEnCOgCEMoBSFryq4qpAxkIARUAAIhCGAHYAQHiAQoIGBACGAY4AUAB&rs=AOn4CLC0I_POzLYHRkO6MmuhbFYNelxDbw",
+          "height": 202,
+          "width": 360
+        },
+        {
+          "url": "https://i.ytimg.com/vi/C7cQ3_jD14k/hq720.jpg?sqp=-oaymwEnCNAFEJQDSFryq4qpAxkIARUAAIhCGAHYAQHiAQoIGBACGAY4AUAB&rs=AOn4CLBVljKPdbbCZb3G5IxzeWD1XsiN2Q",
+          "height": 404,
+          "width": 720
+        }
+      ],
+      "timestamp": null,
+      "release_timestamp": null,
+      "availability": null,
+      "view_count": 37965,
+      "live_status": null,
+      "channel_is_verified": true
+    }
+  ],
+  "webpage_url": "ytsearch3:me at the zoo",
+  "original_url": "ytsearch3:me at the zoo",
+  "webpage_url_basename": "me at the zoo",
+  "webpage_url_domain": null,
+  "extractor": "youtube:search",
+  "extractor_key": "YoutubeSearch",
+  "release_year": null,
+  "playlist_count": 3,
+  "epoch": 1793399104,
+  "_version": {
+    "version": "2026.10.26",
+    "current_git_head": null,
+    "release_git_head": "c91f8de0bfb3577894abad716eaaa01659e6bd14",
+    "repository": "yt-dlp/yt-dlp"
+  }
+}

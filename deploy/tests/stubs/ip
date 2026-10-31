@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Test double for `ip -4 route get`; STUB_IP=none simulates no route.
+if [[ ${STUB_IP:-} == none ]]; then exit 0; fi
+echo "1.1.1.1 via 10.0.0.1 dev eth0 src ${STUB_IP:-203.0.113.10} uid 0"

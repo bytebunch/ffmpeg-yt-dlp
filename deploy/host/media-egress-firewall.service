@@ -1,0 +1,17 @@
+# Applies the egress filter (DEPLOY.md §4.5) whenever Docker starts. A unit rather than
+# iptables-persistent: saving the whole ruleset would also snapshot Docker's and ufw's rules.
+[Unit]
+Description=Egress filter for the media service containers
+After=docker.service
+Requires=docker.service
+PartOf=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+EnvironmentFile=-/etc/default/media-egress-firewall
+ExecStart=/usr/local/sbin/media-egress-firewall apply
+ExecStop=/usr/local/sbin/media-egress-firewall remove
+
+[Install]
+WantedBy=multi-user.target docker.service

@@ -1,0 +1,11 @@
+node_modules/
+dist/
+coverage/
+.env
+*.log
+.DS_Store
+
+# Local caches (whisper models for tests)
+.cache/
+test-results/
+playwright-report/

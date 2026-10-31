@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# Runs a command in the development toolbox container (Node 24, pnpm, yt-dlp, deno, ffmpeg 8.1).
+#   ./dev pnpm install        ./dev pnpm test        ./dev bash
+#   ./dev --build ...         rebuilds the toolbox image first
+# node_modules and the pnpm store live in Docker volumes; the Docker socket is shared so
+# integration tests can start Postgres and Redis with Testcontainers.
+# Written for the bash 3.2 that macOS ships.
+set -euo pipefail
+
+root=$(cd "$(dirname "$0")" && pwd)
+image=media-dev:latest
+ffmpeg_image=${FFMPEG_IMAGE:-media-ffmpeg:dev}
+
+build() {
+  if ! docker image inspect "$ffmpeg_image" >/dev/null 2>&1; then
+    echo "The toolbox copies ffmpeg from $ffmpeg_image; build it first (about 15 minutes):" >&2
+    echo "  docker build -t media-ffmpeg:dev docker/ffmpeg" >&2
+    exit 1
+  fi
+  docker build --build-arg "FFMPEG_IMAGE=$ffmpeg_image" -t "$image" "$root/docker/dev"
+}
+
+if [ "${1:-}" = "--build" ]; then
+  shift
+  build
+elif ! docker image inspect "$image" >/dev/null 2>&1; then
+  build
+fi
+
+tty_flags=""
+if [ -t 0 ] && [ -t 1 ]; then tty_flags="-it"; fi
+
+# shellcheck disable=SC2086 # tty_flags is empty or one flag
+exec docker run --rm $tty_flags \
+  -v "$root:/app" \
+  -v media-dev-node-modules:/app/node_modules \
+  -v media-dev-pnpm-store:/pnpm/store \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal \
+  --add-host host.docker.internal:host-gateway \
+  -e CI="${CI:-}" \
+  -w /app "$image" "$@"

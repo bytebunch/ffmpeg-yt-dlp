@@ -1,0 +1,128 @@
+# Lint and test on every push and pull request; on main also image acceptance, the end-to-end
+# stack test and publishing both images to GHCR (private, linux/amd64; SPEC §17).
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Format, lint, types, unit, integration and browser tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+      - uses: docker/setup-buildx-action@v3
+      # The toolbox copies the production ffmpeg build; the GHA cache makes this a cache hit
+      # except when docker/ffmpeg changes.
+      - name: Build media-ffmpeg
+        uses: docker/build-push-action@v6
+        with:
+          context: docker/ffmpeg
+          tags: media-ffmpeg:ci
+          load: true
+          cache-from: type=gha,scope=media-ffmpeg
+          cache-to: type=gha,mode=max,scope=media-ffmpeg
+      - name: Build the toolbox image
+        run: docker build --build-arg FFMPEG_IMAGE=media-ffmpeg:ci -t media-dev:latest docker/dev
+      - name: Install dependencies
+        run: ./dev pnpm install --frozen-lockfile
+      - name: pnpm check
+        run: ./dev pnpm check
+      - name: Browser tests (Playwright, Chromium desktop and mobile)
+        run: ./dev pnpm test:e2e
+      - name: Keep Playwright traces of failures
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: test-results/
+          retention-days: 7
+
+  installer:
+    name: install.sh tests (bats, shellcheck)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - run: deploy/tests/run.sh
+
+  shell:
+    name: shellcheck (repository scripts)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - run: >
+          docker run --rm -v "$PWD:/src:ro" -w /src koalaman/shellcheck:v0.10.0
+          scripts/e2e.sh dev docker/ffmpeg/test.sh docker/app/cli deploy/smoke.sh
+
+  images:
+    name: media-ffmpeg acceptance, end-to-end stack test, publish to GHCR
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [check, installer, shell]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: docker/setup-buildx-action@v3
+      - name: Build media-ffmpeg
+        uses: docker/build-push-action@v6
+        with:
+          context: docker/ffmpeg
+          tags: media-ffmpeg:ci
+          load: true
+          cache-from: type=gha,scope=media-ffmpeg
+          cache-to: type=gha,mode=max,scope=media-ffmpeg
+      - name: media-ffmpeg acceptance test
+        run: docker/ffmpeg/test.sh media-ffmpeg:ci
+      - name: End-to-end stack test
+        run: FFMPEG_IMAGE=media-ffmpeg:ci scripts/e2e.sh
+      - name: Registry and tags
+        env:
+          # The ffmpeg image changes only with its build files: tag it by their hash.
+          FFMPEG_HASH: ${{ hashFiles('docker/ffmpeg/**') }}
+        run: |
+          {
+            echo "REGISTRY=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}"
+            echo "FFMPEG_TAG=n8.1.3-w1.9.5-${FFMPEG_HASH::16}"
+          } >>"$GITHUB_ENV"
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Push media-ffmpeg
+        id: ffmpeg
+        uses: docker/build-push-action@v6
+        with:
+          context: docker/ffmpeg
+          platforms: linux/amd64
+          push: true
+          tags: ${{ env.REGISTRY }}/media-ffmpeg:${{ env.FFMPEG_TAG }}
+          cache-from: type=gha,scope=media-ffmpeg
+      - name: Push media-service
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          # FROM the ffmpeg image by digest (SPEC §17).
+          build-args: |
+            FFMPEG_IMAGE=${{ env.REGISTRY }}/media-ffmpeg@${{ steps.ffmpeg.outputs.digest }}
+            GIT_SHA=${{ github.sha }}
+          tags: |
+            ${{ env.REGISTRY }}/media-service:${{ github.sha }}
+            ${{ env.REGISTRY }}/media-service:main
+          labels: org.opencontainers.image.revision=${{ github.sha }}

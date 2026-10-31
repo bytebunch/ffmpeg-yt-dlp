@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Test double for curl: answers the GitHub /user lookup, records the call without the header.
+set -euo pipefail
+header=$(cat)
+printf 'curl %s (stdin header: %s)\n' "$*" "${header%% *}" >>"$CALLS_LOG"
+echo '{"login": "octo-user", "id": 1}'

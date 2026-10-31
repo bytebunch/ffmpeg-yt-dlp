@@ -1,0 +1,7 @@
+{
+  // Browser tests: page.evaluate callbacks run in the page, so they need the DOM types.
+  "extends": "../../tsconfig.json",
+  "compilerOptions": { "lib": ["es2024", "dom"], "noEmit": true },
+  "include": ["."],
+  "exclude": []
+}

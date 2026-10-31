@@ -1,0 +1,95 @@
+# Bundled proxy (compose profile "proxy"): the API on plain HTTP, port 8080 in the container.
+# The host's nginx can later add TLS in front of it (nginx/front.conf, DEPLOY-QUICKSTART.md).
+# ${API_PORT} and ${MAX_UPLOAD_SIZE_MB} are filled in by the nginx image's envsubst step.
+# Keep the locations in step with nginx/media.conf (deploy/tests/nginx.sh checks).
+
+limit_req_zone $binary_remote_addr zone=media_api:10m rate=20r/s;
+limit_req_zone $binary_remote_addr zone=media_uploads:10m rate=10r/s;
+limit_req_zone $binary_remote_addr zone=media_downloads:10m rate=20r/s;
+limit_req_status 429;
+
+upstream media_api {
+    server api:${API_PORT};
+    keepalive 16;
+}
+
+server {
+    listen 8080;
+    server_tokens off;
+    client_max_body_size 1m;
+
+    # Behind nginx/front.conf the host's nginx connects from the Docker gateway: trust its
+    # X-Forwarded-For there only, so the per-IP limits see the real clients.
+    real_ip_header X-Forwarded-For;
+    set_real_ip_from 172.16.0.0/12;
+    set_real_ip_from 127.0.0.1;
+    real_ip_recursive on;
+
+    proxy_http_version 1.1;
+    proxy_set_header Connection "";
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+
+    location /v1/ {
+        limit_req zone=media_api burst=40 nodelay;
+        proxy_pass http://media_api;
+    }
+
+    # Long-lived streams: MCP and job progress events.
+    location /mcp {
+        limit_req zone=media_api burst=40 nodelay;
+        proxy_buffering off;
+        proxy_read_timeout 3600s;
+        proxy_pass http://media_api;
+    }
+    location ~ ^/v1/jobs/[^/]+/events$ {
+        proxy_buffering off;
+        proxy_read_timeout 3600s;
+        proxy_pass http://media_api;
+    }
+
+    # Signed downloads: the API checks the link and answers with X-Accel-Redirect;
+    # nginx then streams the file from the internal location with Range support.
+    location /d/ {
+        limit_req zone=media_downloads burst=50 nodelay;
+        proxy_pass http://media_api;
+    }
+    location /_files/ {
+        internal;
+        alias /data/files/;
+    }
+
+    # Resumable uploads (tus): streamed straight to the API.
+    location /u/ {
+        limit_req zone=media_uploads burst=20 nodelay;
+        proxy_request_buffering off;
+        client_max_body_size ${MAX_UPLOAD_SIZE_MB}m;
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+        proxy_pass http://media_api;
+    }
+
+    location /docs {
+        limit_req zone=media_api burst=40 nodelay;
+        proxy_pass http://media_api;
+    }
+    location /oauth/ {
+        limit_req zone=media_api burst=40 nodelay;
+        proxy_pass http://media_api;
+    }
+
+    # Operational endpoints: private networks only.
+    location ~ ^/(health|metrics)$ {
+        allow 127.0.0.0/8;
+        allow 10.0.0.0/8;
+        allow 172.16.0.0/12;
+        allow 192.168.0.0/16;
+        deny all;
+        proxy_pass http://media_api;
+    }
+
+    location / {
+        return 404;
+    }
+}
