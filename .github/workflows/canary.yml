@@ -1,12 +1,12 @@
-# Daily canary (SPEC §16): real YouTube metadata, playlist expansion, downloads, a then recipe,
-# transcripts and comments with the pinned yt-dlp. A failure means an extractor broke or the CI
-# IP is being challenged; run the Rebuild workflow with a newer yt-dlp. Optional CANARY_PING_URL
-# secret: pinged on success, "<url>/fail" on failure.
+# Live tests against YouTube (SPEC §16): real metadata, playlist expansion, downloads, a then
+# recipe, transcripts and comments with the pinned yt-dlp. Run by hand only: YouTube often refuses
+# GitHub runners' IPs (BOT_CHECK), so the daily canary runs on the server (deploy/canary.sh,
+# DEPLOY.md §4.10), from the IP that matters. A failure here that is not BOT_CHECK means an
+# extractor broke; run the Rebuild workflow with a newer yt-dlp. Optional CANARY_PING_URL secret:
+# pinged on success, "<url>/fail" on failure.
 name: Canary
 
 on:
-  schedule:
-    - cron: '23 5 * * *'
   workflow_dispatch:
 
 permissions:

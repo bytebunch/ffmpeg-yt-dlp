@@ -95,6 +95,8 @@ point (see "Installer review" at the end).
 | D53 | Browser tests run the built app (dist/) from a server script, Google mocked there | Playwright's TS loader emits no decorator metadata, which Nest's DI needs |
 | D54 | `install.sh` enforces no CPU, RAM or disk minimum; it only checks AVX2 and turns transcription off without it | User's decision: the service runs on smaller servers, only more slowly. DEPLOY.md keeps 8 vCPU / 16 GB as the recommendation. In SPEC §17 |
 | D55 | The bundled nginx defaults to `127.0.0.1:8085` (was `0.0.0.0:8080`); the installer no longer looks up the server's IP | User's decision: nothing is reachable from other machines until the developer opens it, through `HTTP_BIND` in `.env` or their own nginx in front. In SPEC §17 |
+| D56 | On CI (`ci.yml`, `rebuild.yml`) a YouTube `BOT_CHECK` answer skips the e2e's YouTube checks (`E2E_ALLOW_YOUTUBE_BLOCK=1`), with a warning on the run; any other failure still fails | User's decision: GitHub runners' IPs are refused by YouTube, which blocked every image push. YouTube is proven where the IP matters: the Mac e2e, the installer's smoke test and the server canary. In SPEC §17 |
+| D57 | The daily canary runs only on the server (`canary.sh`); `canary.yml` runs by hand | User's decision: from a runner IP it can only report the block, and it costs Actions minutes daily. In SPEC §17 |
 
 ## Steps
 
@@ -1052,3 +1054,21 @@ changes were made.
   guard's own test still sets a quota of 1.
 - **Totals: the 9 files on the 87%-full disk 142/142, the guard test alone passes there,
   `pnpm check` 724/724.**
+
+### Second CI run: YouTube refuses the runner, and two Linux-only e2e bugs ✅ (CI run pending)
+- Tests passed on GitHub (724/724, browser tests). The e2e failed 5 checks:
+  - YouTube answered `BOT_CHECK` ("Sign in to confirm you're not a bot") to every request from
+    the runner (media info, smoke download, live recording).
+  - "the recipe output is 80x60": `ffprobe` ran in the image as UID 10001, which cannot enter the
+    `mktemp -d` directory (0700) on Linux; Docker Desktop ignores that, so the Mac never showed it.
+    The live recording's `ffprobe` had the same bug. Cleanup also failed on files the services
+    wrote as their own users.
+- `scripts/e2e.sh`: one-off containers run as the host user; cleanup deletes the install
+  directory's contents with a root container first. With `E2E_ALLOW_YOUTUBE_BLOCK=1` a
+  `BOT_CHECK` answer from `/v1/info` skips the YouTube checks (smoke.sh's real-site part, the smoke
+  download's location, the live recording) and adds a warning to the GitHub run; nothing else is
+  skipped (D56). `ci.yml` and `rebuild.yml` set it. `canary.yml` runs by hand only (D57); SPEC §17
+  updated.
+- **Totals: shellcheck and actionlint clean; e2e with the allowance on and YouTube reachable 68/68
+  with no skips; e2e with the probe forced to "blocked" 64 passed + 4 YouTube checks skipped with
+  the warning. The Linux permission fixes can only be confirmed on the next CI run.**

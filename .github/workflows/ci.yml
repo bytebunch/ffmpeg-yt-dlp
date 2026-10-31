@@ -88,6 +88,9 @@ jobs:
       - name: media-ffmpeg acceptance test
         run: docker/ffmpeg/test.sh media-ffmpeg:ci
       - name: End-to-end stack test
+        env:
+          # Runner IPs are often refused by YouTube; that answer alone skips its checks.
+          E2E_ALLOW_YOUTUBE_BLOCK: '1'
         run: FFMPEG_IMAGE=media-ffmpeg:ci scripts/e2e.sh
       - name: Registry and tags
         env:

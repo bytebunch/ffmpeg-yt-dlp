@@ -827,7 +827,7 @@ Built in from day one: separate api / worker-dl / worker-ff containers, two Bull
 - **Config:** env validation for database/Redis URLs, SSL settings, proxy pool and font allowlist (bad values refuse to start); the integration suite also runs with TLS-enabled Postgres and a separate migration role.
 - **Smoke:** real yt-dlp in the container against a local media server — single item, a 3-item playlist, sections, SponsorBlock (mocked API), subtitles embed, a `then` recipe, a live recording from a local HLS stream, signed link through nginx, upload through tus → recipe → Drive (mock).
 - **E2E (Playwright):** Drive connect/callback pages; a minimal upload test page driving tus-js-client against the API.
-- **CI (GitHub Actions):** lint, typecheck, unit, integration, real-binary tests, image build, push to GHCR; weekly rebuild with the latest pinned yt-dlp; daily canary download and canary recipe with alerts.
+- **CI (GitHub Actions):** lint, typecheck, unit, integration, real-binary tests, image build, push to GHCR; weekly rebuild with the latest pinned yt-dlp; live YouTube tests on demand. YouTube often refuses runner IPs (`BOT_CHECK`): the end-to-end test then skips its YouTube checks, for that answer only, and flags the run with a warning.
 
 ---
 
@@ -842,7 +842,7 @@ Built in from day one: separate api / worker-dl / worker-ff containers, two Bull
 - **Releases:** `IMAGE_TAG` in `.env` selects the image; `deploy.sh <git-sha>` sets it, records it in `.release-history`, pulls, runs `up -d` and then `smoke.sh` (health, info, download + Range request through nginx, recipe, transcribe). Rollback = `deploy.sh <previous sha>`. Workers get `stop_grace_period: 5m`.
 - **Migrations:** the one-off `migrate` service applies Drizzle migrations on every deploy before the others start. Migrations are **expand/contract**: a release only adds; removals and renames ship a release later. An older image's `migrate` is then a no-op, so rolling back never touches the schema.
 - **Backups:** nightly `pg_dump`, 14-day retention; `BACKUP_ENABLED=false` when the external DB handles backups. Files are not backed up (7-day TTL by design).
-- **yt-dlp / ffmpeg updates:** versions pinned in the image; CI rebuilds weekly; daily canary download and recipe alert on breakage; manual "rebuild now" path for urgent extractor fixes.
+- **yt-dlp / ffmpeg updates:** versions pinned in the image; CI rebuilds weekly; a daily canary on the server (`canary.sh`: download, recipe, transcription, from the server's own IP) alerts on breakage; manual "rebuild now" path for urgent extractor fixes.
 
 ### 17a. External Postgres / Redis
 

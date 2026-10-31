@@ -55,6 +55,9 @@ jobs:
       - name: media-ffmpeg acceptance test
         run: docker/ffmpeg/test.sh media-ffmpeg:ci
       - name: End-to-end stack test with this yt-dlp
+        env:
+          # Runner IPs are often refused by YouTube; that answer alone skips its checks.
+          E2E_ALLOW_YOUTUBE_BLOCK: '1'
         run: FFMPEG_IMAGE=media-ffmpeg:ci YTDLP_VERSION="$YTDLP_VERSION" scripts/e2e.sh
       - uses: docker/login-action@v3
         with:

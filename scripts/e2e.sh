@@ -4,6 +4,9 @@
 # starts the stack (bundled Postgres, Redis and nginx proxy), runs deploy/smoke.sh through the
 # proxy, then checks container hardening, bundled binaries and a restart.
 #   scripts/e2e.sh            FFMPEG_IMAGE=... scripts/e2e.sh            scripts/e2e.sh --keep
+# YouTube often refuses datacenter IPs such as CI runners' ("Sign in to confirm you're not a bot").
+# With E2E_ALLOW_YOUTUBE_BLOCK=1 (ci.yml, rebuild.yml) that answer, and only that one, skips the
+# YouTube checks; everywhere else they must pass.
 # Written for the bash 3.2 that macOS ships.
 set -euo pipefail
 
@@ -13,6 +16,9 @@ http_port=18080
 api_port=13000
 keep=0
 if [ "${1:-}" = "--keep" ]; then keep=1; fi
+# One-off containers that read or write the install directory run as this user: on Linux the
+# image's UID 10001 cannot enter the mktemp directory (0700).
+host_user="$(id -u):$(id -g)"
 
 failures=0
 pass() { printf 'ok    %s\n' "$1"; }
@@ -39,6 +45,10 @@ cleanup() {
   # Attached to the stack's networks, so it goes first.
   docker rm -f media-e2e-host-vhost >/dev/null 2>&1 || true
   compose down -v --remove-orphans >/dev/null 2>&1 || echo "warning: compose down failed for $dir"
+  # The services wrote files as their own users (10001, postgres, redis); on Linux only root can
+  # remove those.
+  docker run --rm --user 0 -v "$dir:/out" --entrypoint find media-service:e2e /out -mindepth 1 -delete \
+    >/dev/null 2>&1 || true
   rm -rf "$dir"
 }
 trap cleanup EXIT
@@ -104,8 +114,35 @@ check "migrate exited 0" test "$migrate_exit" = 0
 key=$(compose exec -T api cli keys:create e2e --quiet)
 check "cli keys:create printed a key" grep -Eq '^mk_[A-Za-z0-9_-]{32}$' <<<"$key"
 
+api() {  # <method> <path> [JSON body]
+  if [ $# -ge 3 ]; then
+    curl -s -X "$1" -H "Authorization: Bearer $key" -H 'x-user-id: e2e' -H 'content-type: application/json' \
+      -d "$3" "http://127.0.0.1:$http_port$2"
+  else
+    curl -s -X "$1" -H "Authorization: Bearer $key" -H 'x-user-id: e2e' "http://127.0.0.1:$http_port$2"
+  fi
+}
+field() { python3 -c "import json,sys; print(json.load(sys.stdin)[sys.argv[1]])" "$1"; }
+youtube=reachable
+youtube_blocked() {  # true only when allowed and YouTube answers BOT_CHECK
+  local answer
+  [ "${E2E_ALLOW_YOUTUBE_BLOCK:-0}" = 1 ] || return 1
+  answer=$(api POST /v1/info '{"url":"https://www.youtube.com/watch?v=jNQXAC9IVRw"}')
+  case "$answer" in *'"code":"BOT_CHECK"'*) return 0 ;; esac
+  return 1
+}
+skip_youtube() {  # <what is skipped>
+  echo "warn  $1 skipped: YouTube refuses this machine's IP (BOT_CHECK)"
+}
+
 echo "--- deploy/smoke.sh through the proxy"
-if BASE_URL="http://127.0.0.1:$http_port" API_KEY="$key" SMOKE_STRICT=1 "$dir/smoke.sh"; then
+smoke_strict=1
+if youtube_blocked; then
+  youtube=blocked
+  smoke_strict=0
+  skip_youtube "the real-site part of smoke.sh"
+fi
+if BASE_URL="http://127.0.0.1:$http_port" API_KEY="$key" SMOKE_STRICT=$smoke_strict "$dir/smoke.sh"; then
   pass "smoke.sh"
 else
   fail "smoke.sh"
@@ -141,12 +178,11 @@ check "yt-dlp uses the bgutil plugin" sh -c "docker compose --project-directory 
   | grep -Eq 'bgutil:http-[0-9.]+ \(external\)'"
 
 echo "--- resumable upload through nginx (tus)"
-docker run --rm --user "$(id -u):$(id -g)" -v "$dir:/out" --entrypoint ffmpeg media-service:e2e \
+docker run --rm --user "$host_user" -v "$dir:/out" --entrypoint ffmpeg media-service:e2e \
   -hide_banner -loglevel error -f lavfi -i testsrc2=size=160x120:rate=10:duration=1 -c:v libx264 -y /out/upload.mp4
 upload_size=$(wc -c <"$dir/upload.mp4" | tr -d ' ')
 created=$(curl -s -H "Authorization: Bearer $key" -H 'x-user-id: e2e' -H 'content-type: application/json' \
   -d "{\"filename\":\"upload.mp4\",\"size\":$upload_size}" "http://127.0.0.1:$http_port/v1/uploads")
-field() { python3 -c "import json,sys; print(json.load(sys.stdin)[sys.argv[1]])" "$1"; }
 upload_id=$(printf '%s' "$created" | field uploadId)
 upload_token=$(printf '%s' "$created" | field uploadToken)
 patch_code=$(curl -s -o /dev/null -w '%{http_code}' -X PATCH \
@@ -208,7 +244,7 @@ hls_url=$(printf '%s' "$process_job" | python3 -c "import json,sys; print([o['ur
 check "the HLS playlist downloads through nginx" sh -c "curl -fs '$hls_url' | grep -q '#EXTM3U'"
 check "files inside the HLS package download through nginx" sh -c "curl -fs '${hls_url%master.m3u8}v0/index.m3u8' | grep -q '#EXTINF'"
 check "the recipe output is 80x60" sh -c \
-  "docker run --rm -v '$dir:/out' --entrypoint ffprobe media-service:e2e -v error -show_entries stream=width,height -of csv=p=0 /out/small.mp4 | grep -q '^80,60'"
+  "docker run --rm --user $host_user -v '$dir:/out' --entrypoint ffprobe media-service:e2e -v error -show_entries stream=width,height -of csv=p=0 /out/small.mp4 | grep -q '^80,60'"
 
 if [ "$transcribe" = 1 ]; then
   echo "--- transcribe with whisper.cpp on worker-ff"
@@ -230,14 +266,6 @@ else
 fi
 
 echo "--- cookies and watches through nginx"
-api() {  # <method> <path> [JSON body]
-  if [ $# -ge 3 ]; then
-    curl -s -X "$1" -H "Authorization: Bearer $key" -H 'x-user-id: e2e' -H 'content-type: application/json' \
-      -d "$3" "http://127.0.0.1:$http_port$2"
-  else
-    curl -s -X "$1" -H "Authorization: Bearer $key" -H 'x-user-id: e2e' "http://127.0.0.1:$http_port$2"
-  fi
-}
 jar=$(python3 -c 'import json; print(json.dumps({"cookies": ".youtube.com\tTRUE\t/\tTRUE\t0\tPREF\tsecret-e2e\n", "label": "e2e"}))')
 api PUT /v1/cookies "$jar" >"$dir/jar.json"
 check "a cookie jar is stored" grep -q '"domains":\["youtube.com"\]' "$dir/jar.json"
@@ -253,7 +281,12 @@ check "Drive is off without GOOGLE_* (501)" test "$(curl -s -o /dev/null -w '%{h
 check "the OAuth callback page is public through nginx" sh -c \
   "curl -s 'http://127.0.0.1:$http_port/oauth/google/callback?state=x&code=y' | grep -q 'Google Drive not connected'"
 
-if [ "${E2E_LIVE:-1}" = 1 ]; then
+if [ "${E2E_LIVE:-1}" != 1 ]; then
+  echo "warn  live recording check skipped (E2E_LIVE=0)"
+elif [ "$youtube" = blocked ] || youtube_blocked; then
+  youtube=blocked
+  skip_youtube "live recording check"
+else
   echo "--- live recording (a real YouTube live stream, stopped with SIGINT)"
   live_id=$(api POST /v1/jobs '{"type":"record","url":"https://www.youtube.com/@LofiGirl/live","preset":"360p","max_duration_minutes":5}' | field id)
   recorded_bytes() { api GET "/v1/jobs/$live_id" | python3 -c "import json,sys; print((json.load(sys.stdin).get('progress') or {}).get('bytes') or 0)"; }
@@ -272,10 +305,8 @@ if [ "${E2E_LIVE:-1}" = 1 ]; then
   [ -n "$live_url" ] || printf '%s\n' "$live_job"
   # One value per line: the format name itself contains commas (mov,mp4,m4a,…).
   check "the recording is a remuxed MP4 of more than 10 s" sh -c \
-    "docker run --rm -v '$dir:/out' --entrypoint ffprobe media-service:e2e -v error -show_entries format=format_name,duration -of default=nw=1 /out/live.mp4 \
+    "docker run --rm --user $host_user -v '$dir:/out' --entrypoint ffprobe media-service:e2e -v error -show_entries format=format_name,duration -of default=nw=1 /out/live.mp4 \
      | awk -F= '\$1 == \"format_name\" && \$2 ~ /mp4/ { mp4 = 1 } \$1 == \"duration\" && \$2 > 10 { long = 1 } END { exit !(mp4 && long) }'"
-else
-  echo "warn  live recording check skipped (E2E_LIVE=0)"
 fi
 
 echo "--- backups"
@@ -303,8 +334,12 @@ echo "--- worker-dl and downloaded files"
 check "worker-dl is running" test "$(docker inspect --format '{{ .State.Status }}' "$(compose ps -q worker-dl)")" = running
 check "worker-dl runs as uid 10001" test "$(compose exec -T worker-dl id -u)" = 10001
 check "worker-dl root filesystem is read-only" sh -c "! docker compose --project-directory '$dir' exec -T worker-dl touch /app/probe"
-check "the smoke download landed on the files volume as <jobId>/<outputId>/<name>" \
-  sh -c "find '$dir/files' -mindepth 3 -maxdepth 3 -type f -name '*.mp4' | grep -q ."
+if [ "$youtube" = blocked ]; then
+  skip_youtube "the smoke download's location check"
+else
+  check "the smoke download landed on the files volume as <jobId>/<outputId>/<name>" \
+    sh -c "find '$dir/files' -mindepth 3 -maxdepth 3 -type f -name '*.mp4' | grep -q ."
+fi
 check "no work directories left behind" sh -c "[ -z \"\$(ls -A '$dir/files/.work' 2>/dev/null)\" ]"
 check "tampered signed links are refused by nginx" \
   test "$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$http_port/d/00000000-0000-7000-8000-000000000000?exp=9999999999&sig=x")" = 404
@@ -321,4 +356,12 @@ if [ "$failures" -gt 0 ]; then
   compose logs --tail 30 api
   exit 1
 fi
-echo "e2e passed"
+if [ "$youtube" = blocked ]; then
+  # Shown on the run's summary page, so a pass without YouTube is never mistaken for a full one.
+  if [ "${GITHUB_ACTIONS:-}" = true ]; then
+    echo "::warning title=YouTube checks skipped::YouTube refused this runner's IP (BOT_CHECK); every other e2e check passed."
+  fi
+  echo "e2e passed (YouTube checks skipped: this IP is refused)"
+else
+  echo "e2e passed"
+fi
