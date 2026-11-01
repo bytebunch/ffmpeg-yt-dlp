@@ -1,162 +1,363 @@
 <!doctype html>
 <html lang="en" dir="ltr" data-theme="dark">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#ec2c92">
-<title>Sign in · OTW Studio</title>
-<link rel="icon" href="assets/brand/favicon-64.png" type="image/png">
-<link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@400..800&family=Raleway:wght@400..800&family=Unbounded:wght@500..700&display=swap">
-<link rel="stylesheet" href="assets/studio.css">
-</head>
-<body>
-<svg width="0" height="0" style="position:absolute;overflow:hidden" aria-hidden="true">
-  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></symbol>
-  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></symbol>
-  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
-  <symbol id="i-mail" viewBox="0 0 24 24"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></symbol>
-  <symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
-  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
-  <symbol id="i-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
-  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
-  <symbol id="i-dot" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/></symbol>
-  <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
-</svg>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#ec2c92" />
+    <title>Sign in · OTW Studio</title>
+    <link rel="icon" href="assets/brand/favicon-64.png" type="image/png" />
+    <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Assistant:wght@400..800&family=Raleway:wght@400..800&family=Unbounded:wght@500..700&display=swap"
+    />
+    <link rel="stylesheet" href="assets/studio.css" />
+  </head>
+  <body>
+    <svg width="0" height="0" style="position: absolute; overflow: hidden" aria-hidden="true">
+      <symbol id="i-globe" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
+        <path d="M2 12h20" />
+      </symbol>
+      <symbol id="i-sun" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="4" />
+        <path
+          d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"
+        />
+      </symbol>
+      <symbol id="i-moon" viewBox="0 0 24 24">
+        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+      </symbol>
+      <symbol id="i-mail" viewBox="0 0 24 24">
+        <rect width="20" height="16" x="2" y="4" rx="2" />
+        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+      </symbol>
+      <symbol id="i-lock" viewBox="0 0 24 24">
+        <rect width="18" height="11" x="3" y="11" rx="2" />
+        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+      </symbol>
+      <symbol id="i-info" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 16v-4" />
+        <path d="M12 8h.01" />
+      </symbol>
+      <symbol id="i-alert" viewBox="0 0 24 24">
+        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
+        <path d="M12 9v4" />
+        <path d="M12 17h.01" />
+      </symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></symbol>
+      <symbol id="i-dot" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" /></symbol>
+      <symbol id="i-arrow-right" viewBox="0 0 24 24">
+        <path d="M5 12h14" />
+        <path d="m12 5 7 7-7 7" />
+      </symbol>
+    </svg>
 
-<div class="auth">
-  <section class="auth-brand" aria-labelledby="tagline">
-    <a class="brand" href="index.html">
-      <img class="brand-mark" src="assets/brand/otw-mark.webp" alt="" width="32" height="32">
-      <span class="brand-name">OTW <span>Studio</span></span>
-    </a>
-    <div class="auth-tools">
-      <button class="btn btn-ghost btn-icon btn-sm" type="button" data-action="lang" aria-label="Switch to Hebrew"><svg class="icon"><use href="#i-globe"/></svg></button>
+    <div class="auth">
+      <section class="auth-brand" aria-labelledby="tagline">
+        <a class="brand" href="index.html">
+          <img class="brand-mark" src="assets/brand/otw-mark.webp" alt="" width="32" height="32" />
+          <span class="brand-name">OTW <span>Studio</span></span>
+        </a>
+        <div class="auth-tools">
+          <button
+            class="btn btn-ghost btn-icon btn-sm"
+            type="button"
+            data-action="lang"
+            aria-label="Switch to Hebrew"
+          >
+            <svg class="icon"><use href="#i-globe" /></svg>
+          </button>
+        </div>
+        <img
+          class="auth-helmet"
+          src="assets/brand/otw-helmet.webp"
+          alt=""
+          width="512"
+          height="512"
+        />
+        <h1 id="tagline" data-i18n="auth.tagline">Links in. Files out.</h1>
+        <p data-i18n="auth.lede">
+          Download, convert, clip and transcribe from one place. Studio does the work on its server
+          while you get on with yours.
+        </p>
+      </section>
+
+      <main class="auth-main">
+        <div class="auth-main-tools">
+          <button
+            class="btn btn-ghost btn-icon btn-sm"
+            type="button"
+            data-action="lang"
+            aria-label="Switch to Hebrew"
+          >
+            <svg class="icon"><use href="#i-globe" /></svg>
+          </button>
+          <button
+            class="btn btn-ghost btn-icon btn-sm"
+            type="button"
+            data-action="theme"
+            aria-label="Switch to light theme"
+          >
+            <svg class="icon"><use href="#i-sun" /></svg>
+          </button>
+        </div>
+
+        <!-- sign in -->
+        <form class="auth-card is-active" data-auth="signin" action="index.html" novalidate>
+          <div class="stack" style="gap: 6px">
+            <h2 data-i18n="auth.signin">Sign in</h2>
+            <p class="t-body" data-i18n="auth.signin.sub">
+              Welcome back. Use the email your invite went to.
+            </p>
+          </div>
+          <div class="alert" role="alert" id="signin-error" hidden>
+            <svg class="icon"><use href="#i-alert" /></svg>
+            <div>
+              <div class="alert-title" data-i18n="auth.error.title">
+                That email and password don't match
+              </div>
+              <p data-i18n="auth.error.body">Check both and try again, or reset your password.</p>
+            </div>
+          </div>
+          <div class="field">
+            <label for="email" data-i18n="auth.email">Email</label>
+            <div class="input-group">
+              <svg class="icon icon-sm"><use href="#i-mail" /></svg
+              ><input
+                class="input"
+                id="email"
+                type="email"
+                autocomplete="email"
+                dir="ltr"
+                placeholder="you@example.com"
+                required
+              />
+            </div>
+          </div>
+          <div class="field">
+            <div class="split">
+              <label for="password" data-i18n="auth.password">Password</label
+              ><a href="#reset" class="t-meta" data-i18n="auth.forgot">Forgot it?</a>
+            </div>
+            <div class="input-group">
+              <svg class="icon icon-sm"><use href="#i-lock" /></svg
+              ><input
+                class="input"
+                id="password"
+                type="password"
+                autocomplete="current-password"
+                dir="ltr"
+                required
+              />
+            </div>
+          </div>
+          <button class="btn btn-primary btn-block" type="submit">
+            <span data-i18n="auth.signin">Sign in</span>
+          </button>
+          <div class="auth-note">
+            <svg class="icon"><use href="#i-info" /></svg
+            ><span data-i18n="auth.invite.note"
+              >OTW Studio is invite only. Got an invite? Open the link in that email to set your
+              password.</span
+            >
+          </div>
+          <p class="t-meta" style="text-align: center">
+            <a href="#invite">Preview the invite screen</a> ·
+            <a href="#error">Preview a sign-in error</a>
+          </p>
+        </form>
+
+        <!-- accept invite -->
+        <form class="auth-card" data-auth="invite" action="index.html" novalidate>
+          <div class="stack" style="gap: 6px">
+            <h2 data-i18n="auth.invite.title">You're invited</h2>
+            <p class="t-body">
+              <b>Tahir</b>
+              <span data-i18n="auth.invite.sub"
+                >added you to OTW Studio. Choose your name and a password to finish.</span
+              >
+            </p>
+          </div>
+          <div class="field">
+            <label for="i-email" data-i18n="auth.email">Email</label
+            ><input
+              class="input"
+              id="i-email"
+              type="email"
+              value="maya@example.com"
+              dir="ltr"
+              readonly
+            />
+          </div>
+          <div class="field">
+            <label for="i-name" data-i18n="auth.name">Your name</label
+            ><input class="input" id="i-name" autocomplete="name" />
+          </div>
+          <div class="field">
+            <label for="i-pass" data-i18n="auth.newpass">New password</label>
+            <input
+              class="input"
+              id="i-pass"
+              type="password"
+              autocomplete="new-password"
+              dir="ltr"
+              value="studio2026"
+            />
+            <ul class="pw-rules">
+              <li class="ok">
+                <svg class="icon"><use href="#i-check" /></svg
+                ><span data-i18n="auth.rule.length">At least 10 characters</span>
+              </li>
+              <li>
+                <svg class="icon" style="stroke-width: 6"><use href="#i-dot" /></svg
+                ><span data-i18n="auth.rule.common">Not a common password</span>
+              </li>
+            </ul>
+          </div>
+          <button class="btn btn-primary btn-block" type="submit">
+            <span data-i18n="auth.invite.cta">Create my account</span
+            ><svg class="icon flip-rtl"><use href="#i-arrow-right" /></svg>
+          </button>
+          <p class="t-meta" style="text-align: center">
+            <a href="#signin" data-i18n="auth.have">I already have an account</a>
+          </p>
+        </form>
+
+        <!-- reset -->
+        <form class="auth-card" data-auth="reset" action="#sent" novalidate>
+          <div class="stack" style="gap: 6px">
+            <h2 data-i18n="auth.reset.title">Reset your password</h2>
+            <p class="t-body" data-i18n="auth.reset.sub">
+              We'll email you a link to choose a new one. It works for 30 minutes.
+            </p>
+          </div>
+          <div class="field">
+            <label for="r-email" data-i18n="auth.email">Email</label>
+            <div class="input-group">
+              <svg class="icon icon-sm"><use href="#i-mail" /></svg
+              ><input
+                class="input"
+                id="r-email"
+                type="email"
+                autocomplete="email"
+                dir="ltr"
+                placeholder="you@example.com"
+              />
+            </div>
+          </div>
+          <button class="btn btn-primary btn-block" type="submit">
+            <span data-i18n="auth.reset.cta">Email me a link</span>
+          </button>
+          <p class="t-meta" style="text-align: center">
+            <a href="#signin" data-i18n="auth.back">Back to sign in</a>
+          </p>
+        </form>
+      </main>
     </div>
-    <img class="auth-helmet" src="assets/brand/otw-helmet.webp" alt="" width="512" height="512">
-    <h1 id="tagline" data-i18n="auth.tagline">Links in. Files out.</h1>
-    <p data-i18n="auth.lede">Download, convert, clip and transcribe from one place. Studio does the work on its server while you get on with yours.</p>
-  </section>
 
-  <main class="auth-main">
-    <div class="auth-main-tools">
-      <button class="btn btn-ghost btn-icon btn-sm" type="button" data-action="lang" aria-label="Switch to Hebrew"><svg class="icon"><use href="#i-globe"/></svg></button>
-      <button class="btn btn-ghost btn-icon btn-sm" type="button" data-action="theme" aria-label="Switch to light theme"><svg class="icon"><use href="#i-sun"/></svg></button>
-    </div>
+    <script>
+      /* Sign-in prototype: shows one state per hash (#signin, #invite, #reset, #error) and switches language and theme. */
+      (() => {
+        const root = document.documentElement;
+        const HE = {
+          'auth.tagline': 'קישור נכנס. קובץ יוצא.',
+          'auth.lede':
+            'הורדה, המרה, חיתוך ותמלול ממקום אחד. הסטודיו עובד על השרת שלו בזמן שאתם ממשיכים בשלכם.',
+          'auth.signin': 'כניסה',
+          'auth.signin.sub': 'ברוכים השבים. השתמשו באימייל שאליו נשלחה ההזמנה.',
+          'auth.error.title': 'האימייל והסיסמה לא תואמים',
+          'auth.error.body': 'בדקו את שניהם ונסו שוב, או אפסו את הסיסמה.',
+          'auth.email': 'אימייל',
+          'auth.password': 'סיסמה',
+          'auth.forgot': 'שכחתם?',
+          'auth.invite.note':
+            'OTW Studio פתוח בהזמנה בלבד. קיבלתם הזמנה? פתחו את הקישור שבאימייל כדי לבחור סיסמה.',
+          'auth.invite.title': 'הוזמנתם',
+          'auth.invite.sub': 'הוסיף אתכם ל-OTW Studio. בחרו שם וסיסמה כדי לסיים.',
+          'auth.name': 'השם שלכם',
+          'auth.newpass': 'סיסמה חדשה',
+          'auth.rule.length': 'לפחות 10 תווים',
+          'auth.rule.common': 'לא סיסמה נפוצה',
+          'auth.invite.cta': 'יצירת החשבון שלי',
+          'auth.have': 'כבר יש לי חשבון',
+          'auth.reset.title': 'איפוס סיסמה',
+          'auth.reset.sub': 'נשלח לכם קישור לבחירת סיסמה חדשה. הוא תקף ל-30 דקות.',
+          'auth.reset.cta': 'שלחו לי קישור',
+          'auth.back': 'חזרה לכניסה',
+        };
+        const store = {
+          get(key) {
+            try {
+              return localStorage.getItem(key);
+            } catch {
+              return null;
+            }
+          },
+          set(key, value) {
+            try {
+              localStorage.setItem(key, value);
+            } catch {
+              /* keep the in-page state only */
+            }
+          },
+        };
 
-    <!-- sign in -->
-    <form class="auth-card is-active" data-auth="signin" action="index.html" novalidate>
-      <div class="stack" style="gap:6px">
-        <h2 data-i18n="auth.signin">Sign in</h2>
-        <p class="t-body" data-i18n="auth.signin.sub">Welcome back. Use the email your invite went to.</p>
-      </div>
-      <div class="alert" role="alert" id="signin-error" hidden>
-        <svg class="icon"><use href="#i-alert"/></svg>
-        <div><div class="alert-title" data-i18n="auth.error.title">That email and password don't match</div><p data-i18n="auth.error.body">Check both and try again, or reset your password.</p></div>
-      </div>
-      <div class="field"><label for="email" data-i18n="auth.email">Email</label><div class="input-group"><svg class="icon icon-sm"><use href="#i-mail"/></svg><input class="input" id="email" type="email" autocomplete="email" dir="ltr" placeholder="you@example.com" required></div></div>
-      <div class="field">
-        <div class="split"><label for="password" data-i18n="auth.password">Password</label><a href="#reset" class="t-meta" data-i18n="auth.forgot">Forgot it?</a></div>
-        <div class="input-group"><svg class="icon icon-sm"><use href="#i-lock"/></svg><input class="input" id="password" type="password" autocomplete="current-password" dir="ltr" required></div>
-      </div>
-      <button class="btn btn-primary btn-block" type="submit"><span data-i18n="auth.signin">Sign in</span></button>
-      <div class="auth-note"><svg class="icon"><use href="#i-info"/></svg><span data-i18n="auth.invite.note">OTW Studio is invite only. Got an invite? Open the link in that email to set your password.</span></div>
-      <p class="t-meta" style="text-align:center"><a href="#invite">Preview the invite screen</a> · <a href="#error">Preview a sign-in error</a></p>
-    </form>
-
-    <!-- accept invite -->
-    <form class="auth-card" data-auth="invite" action="index.html" novalidate>
-      <div class="stack" style="gap:6px">
-        <h2 data-i18n="auth.invite.title">You're invited</h2>
-        <p class="t-body"><b>Tahir</b> <span data-i18n="auth.invite.sub">added you to OTW Studio. Choose your name and a password to finish.</span></p>
-      </div>
-      <div class="field"><label for="i-email" data-i18n="auth.email">Email</label><input class="input" id="i-email" type="email" value="maya@example.com" dir="ltr" readonly></div>
-      <div class="field"><label for="i-name" data-i18n="auth.name">Your name</label><input class="input" id="i-name" autocomplete="name"></div>
-      <div class="field">
-        <label for="i-pass" data-i18n="auth.newpass">New password</label>
-        <input class="input" id="i-pass" type="password" autocomplete="new-password" dir="ltr" value="studio2026">
-        <ul class="pw-rules">
-          <li class="ok"><svg class="icon"><use href="#i-check"/></svg><span data-i18n="auth.rule.length">At least 10 characters</span></li>
-          <li><svg class="icon" style="stroke-width:6"><use href="#i-dot"/></svg><span data-i18n="auth.rule.common">Not a common password</span></li>
-        </ul>
-      </div>
-      <button class="btn btn-primary btn-block" type="submit"><span data-i18n="auth.invite.cta">Create my account</span><svg class="icon flip-rtl"><use href="#i-arrow-right"/></svg></button>
-      <p class="t-meta" style="text-align:center"><a href="#signin" data-i18n="auth.have">I already have an account</a></p>
-    </form>
-
-    <!-- reset -->
-    <form class="auth-card" data-auth="reset" action="#sent" novalidate>
-      <div class="stack" style="gap:6px">
-        <h2 data-i18n="auth.reset.title">Reset your password</h2>
-        <p class="t-body" data-i18n="auth.reset.sub">We'll email you a link to choose a new one. It works for 30 minutes.</p>
-      </div>
-      <div class="field"><label for="r-email" data-i18n="auth.email">Email</label><div class="input-group"><svg class="icon icon-sm"><use href="#i-mail"/></svg><input class="input" id="r-email" type="email" autocomplete="email" dir="ltr" placeholder="you@example.com"></div></div>
-      <button class="btn btn-primary btn-block" type="submit"><span data-i18n="auth.reset.cta">Email me a link</span></button>
-      <p class="t-meta" style="text-align:center"><a href="#signin" data-i18n="auth.back">Back to sign in</a></p>
-    </form>
-  </main>
-</div>
-
-<script>
-/* Sign-in prototype: shows one state per hash (#signin, #invite, #reset, #error) and switches language and theme. */
-(() => {
-  const root = document.documentElement;
-  const HE = {
-    'auth.tagline': 'קישור נכנס. קובץ יוצא.',
-    'auth.lede': 'הורדה, המרה, חיתוך ותמלול ממקום אחד. הסטודיו עובד על השרת שלו בזמן שאתם ממשיכים בשלכם.',
-    'auth.signin': 'כניסה', 'auth.signin.sub': 'ברוכים השבים. השתמשו באימייל שאליו נשלחה ההזמנה.',
-    'auth.error.title': 'האימייל והסיסמה לא תואמים', 'auth.error.body': 'בדקו את שניהם ונסו שוב, או אפסו את הסיסמה.',
-    'auth.email': 'אימייל', 'auth.password': 'סיסמה', 'auth.forgot': 'שכחתם?',
-    'auth.invite.note': 'OTW Studio פתוח בהזמנה בלבד. קיבלתם הזמנה? פתחו את הקישור שבאימייל כדי לבחור סיסמה.',
-    'auth.invite.title': 'הוזמנתם', 'auth.invite.sub': 'הוסיף אתכם ל-OTW Studio. בחרו שם וסיסמה כדי לסיים.',
-    'auth.name': 'השם שלכם', 'auth.newpass': 'סיסמה חדשה', 'auth.rule.length': 'לפחות 10 תווים', 'auth.rule.common': 'לא סיסמה נפוצה',
-    'auth.invite.cta': 'יצירת החשבון שלי', 'auth.have': 'כבר יש לי חשבון',
-    'auth.reset.title': 'איפוס סיסמה', 'auth.reset.sub': 'נשלח לכם קישור לבחירת סיסמה חדשה. הוא תקף ל-30 דקות.',
-    'auth.reset.cta': 'שלחו לי קישור', 'auth.back': 'חזרה לכניסה',
-  };
-  const store = {
-    get(key) { try { return localStorage.getItem(key); } catch { return null; } },
-    set(key, value) { try { localStorage.setItem(key, value); } catch { /* keep the in-page state only */ } },
-  };
-
-  function applyLanguage(lang) {
-    root.lang = lang;
-    root.dir = lang === 'he' ? 'rtl' : 'ltr';
-    document.querySelectorAll('[data-i18n]').forEach((node) => {
-      if (!node.dataset.en) node.dataset.en = node.textContent;
-      node.textContent = lang === 'he' ? HE[node.dataset.i18n] || node.dataset.en : node.dataset.en;
-    });
-    document.querySelectorAll('[data-action="lang"]').forEach((b) => b.setAttribute('aria-label', lang === 'he' ? 'Switch to English' : 'Switch to Hebrew'));
-    store.set('studio.lang', lang);
-  }
-  function applyTheme(theme) {
-    root.dataset.theme = theme;
-    document.querySelectorAll('[data-action="theme"]').forEach((b) => {
-      b.setAttribute('aria-label', theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme');
-      b.querySelector('use').setAttribute('href', theme === 'light' ? '#i-moon' : '#i-sun');
-    });
-    store.set('studio.theme', theme);
-  }
-  function show() {
-    const state = location.hash.slice(1) || 'signin';
-    const form = state === 'error' ? 'signin' : state;
-    document.querySelectorAll('[data-auth]').forEach((node) => node.classList.toggle('is-active', node.dataset.auth === form));
-    document.getElementById('signin-error').hidden = state !== 'error';
-    if (state === 'error') document.getElementById('password').closest('.field').classList.add('has-error');
-  }
-  document.addEventListener('click', (event) => {
-    const button = event.target.closest('[data-action]');
-    if (!button) return;
-    if (button.dataset.action === 'lang') applyLanguage(root.lang === 'he' ? 'en' : 'he');
-    if (button.dataset.action === 'theme') applyTheme(root.dataset.theme === 'light' ? 'dark' : 'light');
-  });
-  window.addEventListener('hashchange', show);
-  applyTheme(store.get('studio.theme') || 'dark');
-  applyLanguage(store.get('studio.lang') || 'en');
-  show();
-})();
-</script>
-</body>
+        function applyLanguage(lang) {
+          root.lang = lang;
+          root.dir = lang === 'he' ? 'rtl' : 'ltr';
+          document.querySelectorAll('[data-i18n]').forEach((node) => {
+            if (!node.dataset.en) node.dataset.en = node.textContent;
+            node.textContent =
+              lang === 'he' ? HE[node.dataset.i18n] || node.dataset.en : node.dataset.en;
+          });
+          document
+            .querySelectorAll('[data-action="lang"]')
+            .forEach((b) =>
+              b.setAttribute(
+                'aria-label',
+                lang === 'he' ? 'Switch to English' : 'Switch to Hebrew',
+              ),
+            );
+          store.set('studio.lang', lang);
+        }
+        function applyTheme(theme) {
+          root.dataset.theme = theme;
+          document.querySelectorAll('[data-action="theme"]').forEach((b) => {
+            b.setAttribute(
+              'aria-label',
+              theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme',
+            );
+            b.querySelector('use').setAttribute('href', theme === 'light' ? '#i-moon' : '#i-sun');
+          });
+          store.set('studio.theme', theme);
+        }
+        function show() {
+          const state = location.hash.slice(1) || 'signin';
+          const form = state === 'error' ? 'signin' : state;
+          document
+            .querySelectorAll('[data-auth]')
+            .forEach((node) => node.classList.toggle('is-active', node.dataset.auth === form));
+          document.getElementById('signin-error').hidden = state !== 'error';
+          if (state === 'error')
+            document.getElementById('password').closest('.field').classList.add('has-error');
+        }
+        document.addEventListener('click', (event) => {
+          const button = event.target.closest('[data-action]');
+          if (!button) return;
+          if (button.dataset.action === 'lang') applyLanguage(root.lang === 'he' ? 'en' : 'he');
+          if (button.dataset.action === 'theme')
+            applyTheme(root.dataset.theme === 'light' ? 'dark' : 'light');
+        });
+        window.addEventListener('hashchange', show);
+        applyTheme(store.get('studio.theme') || 'dark');
+        applyLanguage(store.get('studio.lang') || 'en');
+        show();
+      })();
+    </script>
+  </body>
 </html>

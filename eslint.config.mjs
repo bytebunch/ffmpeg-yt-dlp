@@ -24,5 +24,29 @@ export default tseslint.config(
     },
   },
   { files: ['**/*.mjs'], ...tseslint.configs.disableTypeChecked },
+  // The design prototype's script is a plain browser script outside the TypeScript project.
+  {
+    files: ['design/**/*.js'],
+    ...tseslint.configs.disableTypeChecked,
+    languageOptions: {
+      ...tseslint.configs.disableTypeChecked.languageOptions,
+      sourceType: 'script',
+      globals: Object.fromEntries(
+        [
+          'window',
+          'document',
+          'location',
+          'localStorage',
+          'navigator',
+          'performance',
+          'requestAnimationFrame',
+          'setTimeout',
+          'clearTimeout',
+          'setInterval',
+          'clearInterval',
+        ].map((name) => [name, 'readonly']),
+      ),
+    },
+  },
   prettier,
 );
