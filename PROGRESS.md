@@ -11,8 +11,8 @@ Commits only on request. The code is at `github.com/bytebunch/ffmpeg-yt-dlp` (pu
 
 Milestones 1–10 of SPEC §18 are built and tested on the Mac, `ci.yml` is green on GitHub and
 publishes the image, and the first install on the VPS succeeded. Latest totals: `pnpm check`
-729/729, Playwright 6/6, live YouTube tests 7/7, deploy tests 71 (60 Bats, 6 real-packet
-firewall, 5 nginx), ffmpeg image acceptance, e2e 68 checks. The installer was reviewed with the
+729/729, Playwright 6/6, live YouTube tests 7/7, deploy tests 72 (60 Bats, 6 real-packet
+firewall, 6 nginx), ffmpeg image acceptance, e2e 68 checks. The installer was reviewed with the
 user point by point (see "Installer review" at the end).
 
 ### Open items
@@ -99,6 +99,7 @@ user point by point (see "Installer review" at the end).
 | D56 | On CI (`ci.yml`, `rebuild.yml`) a YouTube `BOT_CHECK` answer skips the e2e's YouTube checks (`E2E_ALLOW_YOUTUBE_BLOCK=1`), with a warning on the run; any other failure still fails | User's decision: GitHub runners' IPs are refused by YouTube, which blocked every image push. YouTube is proven where the IP matters: the Mac e2e, the installer's smoke test and the server canary. In SPEC §17 |
 | D57 | The daily canary runs only on the server (`canary.sh`); `canary.yml` runs by hand | User's decision: from a runner IP it can only report the block, and it costs Actions minutes daily. In SPEC §17 |
 | D58 | `install.sh` checks its published ports before the firewall and models and stops with who holds them and the `.env` key to change; it never picks another port itself | Found on the first VPS install (another stack on `127.0.0.1:3000`). `API_PORT` is also the upstream of a host nginx (`nginx/media.conf`), so a silently chosen port would surprise. Approved by the user. In SPEC §17 |
+| D59 | The bundled proxy looks `api` up again in Docker's DNS (`server api:… resolve`, `resolver 127.0.0.11 valid=5s`) instead of once at start | Found on the VPS: an `.env` change recreated `api` with a new address, compose left the proxy running, and every request got 502 until `docker compose restart proxy`. Updates recreate `api` the same way. Approved by the user. In SPEC §17 |
 
 ## Steps
 
@@ -1149,3 +1150,18 @@ nvidia runtime, which the installer kept).
 - DEPLOY-QUICKSTART.md ("What the installer does") and SPEC §17 updated.
 - **Totals: deploy 71 (60 Bats + 6 real-packet firewall + 5 nginx checks), shellcheck clean.**
 
+### The bundled proxy lost the API after an `.env` change (D59) ✅
+- With `HTTP_BIND=0.0.0.0` and `PUBLIC_BASE_URL=http://<server-ip>:8085`, `docker compose up -d`
+  recreated `api` and the workers but not `proxy` (its settings had not changed). The new `api`
+  got a new address on `backend`; nginx had resolved `api` once at start, so every route answered
+  502 in half a second while `api` was healthy. `docker compose restart proxy` fixed it on the
+  server. Every update (`install.sh`, `deploy.sh`) recreates `api` the same way.
+- `proxy.conf.template`: the upstream has a shared-memory `zone`, `resolver 127.0.0.11 valid=5s
+  ipv6=off` (Docker's DNS on the compose networks) and `server api:${API_PORT} resolve`
+  (open-source nginx since 1.27.3; the image is 1.29). Requests during a recreate still fail
+  until the new `api` is up, as before.
+- New check in `deploy/tests/nginx.sh`, written first and failing on the old template ("expected
+  'second' … got 'no answer'"): the rendered proxy on its own network in front of a stand-in
+  `api` at one fixed address, then the stand-in replaced at another; the proxy must reach the new
+  one within 15 s. Passes in 8 s with the fix.
+- SPEC §17 (compose services) updated.

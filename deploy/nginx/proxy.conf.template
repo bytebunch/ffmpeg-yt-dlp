@@ -8,8 +8,13 @@ limit_req_zone $binary_remote_addr zone=media_uploads:10m rate=10r/s;
 limit_req_zone $binary_remote_addr zone=media_downloads:10m rate=20r/s;
 limit_req_status 429;
 
+# Compose gives the API a new address whenever it recreates the container (an .env change, an
+# update) and leaves this proxy running, so look the name up again in Docker's DNS rather than
+# once at start.
 upstream media_api {
-    server api:${API_PORT};
+    zone media_api_upstream 64k;
+    resolver 127.0.0.11 valid=5s ipv6=off;
+    server api:${API_PORT} resolve;
     keepalive 16;
 }
 

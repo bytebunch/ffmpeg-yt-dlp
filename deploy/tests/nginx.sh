@@ -48,5 +48,38 @@ check "both define the API, upload and download zones" sh -c "
     grep -q \"zone=\$zone:\" '$deploy_dir/nginx/proxy.conf.template' && grep -q \"zone=\$zone:\" '$deploy_dir/nginx/media-zones.conf' || exit 1
   done"
 
+# Compose gives the API container a new address whenever it recreates it (an .env change, an
+# update) and leaves the running proxy alone, so the proxy has to find the new one by itself.
+net=media-nginx-test-$$
+cleanup() {
+  docker rm -f "$net-api" "$net-proxy" >/dev/null 2>&1 || true
+  docker network rm "$net" >/dev/null 2>&1 || true
+}
+trap cleanup EXIT
+stand_in_api() {  # <address> <answer>: a container named api that answers every request with <answer>
+  docker rm -f "$net-api" >/dev/null 2>&1 || true
+  docker run -d --name "$net-api" --network "$net" --network-alias api --ip "$1" --entrypoint sh "$image" -c \
+    "echo 'server { listen 3000; location / { return 200 $2; } }' >/etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'" >/dev/null
+}
+proxy_answers() {  # <answer>: the proxy passes /v1/ through to the API and gets <answer>, within 15 s
+  local answer=""
+  for _ in $(seq 15); do
+    answer=$(docker exec "$net-proxy" wget -qO- -T 2 http://127.0.0.1:8080/v1/ping 2>/dev/null) && [ "$answer" = "$1" ] && return 0
+    sleep 1
+  done
+  echo "expected '$1' from the API through the proxy, got '${answer:-no answer}'"
+  return 1
+}
+proxy_follows_api() {
+  docker network create --subnet 10.231.77.0/24 "$net" >/dev/null
+  stand_in_api 10.231.77.10 first
+  docker run -d --name "$net-proxy" --network "$net" -e API_PORT=3000 -e MAX_UPLOAD_SIZE_MB=4096 \
+    -v "$deploy_dir/nginx/proxy.conf.template:/etc/nginx/templates/default.conf.template:ro" "$image" >/dev/null
+  proxy_answers first
+  stand_in_api 10.231.77.20 second
+  proxy_answers second
+}
+check "bundled proxy follows the API to its new address after a recreate" proxy_follows_api
+
 if [ "$failures" -gt 0 ]; then echo "$failures nginx check(s) failed"; exit 1; fi
 echo "nginx checks passed"
