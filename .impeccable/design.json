@@ -1,0 +1,1213 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-01T20:53:51+00:00",
+  "title": "Design System: OTW Studio",
+  "extensions": {
+    "colorMeta": {
+      "signal": {
+        "role": "primary",
+        "displayName": "OTW Magenta",
+        "canonical": "#ec2c92",
+        "oklch": "oklch(63.2% 0.236 354.6)",
+        "tonalRamp": [
+          "oklch(15.0% 0.236 354.6)",
+          "oklch(26.4% 0.236 354.6)",
+          "oklch(37.9% 0.236 354.6)",
+          "oklch(49.3% 0.236 354.6)",
+          "oklch(60.7% 0.236 354.6)",
+          "oklch(72.1% 0.236 354.6)",
+          "oklch(83.6% 0.236 354.6)",
+          "oklch(95.0% 0.236 354.6)"
+        ]
+      },
+      "signal-fill": {
+        "role": "primary",
+        "displayName": "Pressed Magenta",
+        "canonical": "#d41b7e",
+        "oklch": "oklch(57.6% 0.223 355.7)",
+        "tonalRamp": [
+          "oklch(15.0% 0.223 355.7)",
+          "oklch(26.4% 0.223 355.7)",
+          "oklch(37.9% 0.223 355.7)",
+          "oklch(49.3% 0.223 355.7)",
+          "oklch(60.7% 0.223 355.7)",
+          "oklch(72.1% 0.223 355.7)",
+          "oklch(83.6% 0.223 355.7)",
+          "oklch(95.0% 0.223 355.7)"
+        ]
+      },
+      "signal-fill-hover": {
+        "role": "primary",
+        "displayName": "Pressed Magenta Hover",
+        "canonical": "#db2084",
+        "oklch": "oklch(59.2% 0.227 355.3)",
+        "tonalRamp": [
+          "oklch(15.0% 0.227 355.3)",
+          "oklch(26.4% 0.227 355.3)",
+          "oklch(37.9% 0.227 355.3)",
+          "oklch(49.3% 0.227 355.3)",
+          "oklch(60.7% 0.227 355.3)",
+          "oklch(72.1% 0.227 355.3)",
+          "oklch(83.6% 0.227 355.3)",
+          "oklch(95.0% 0.227 355.3)"
+        ]
+      },
+      "signal-ink": {
+        "role": "primary",
+        "displayName": "Pink Readout",
+        "canonical": "#f56aaf",
+        "oklch": "oklch(71.4% 0.184 351.8)",
+        "tonalRamp": [
+          "oklch(15.0% 0.184 351.8)",
+          "oklch(26.4% 0.184 351.8)",
+          "oklch(37.9% 0.184 351.8)",
+          "oklch(49.3% 0.184 351.8)",
+          "oklch(60.7% 0.184 351.8)",
+          "oklch(72.1% 0.184 351.8)",
+          "oklch(83.6% 0.184 351.8)",
+          "oklch(95.0% 0.184 351.8)"
+        ]
+      },
+      "signal-soft": {
+        "role": "primary",
+        "displayName": "Selection Tint",
+        "canonical": "rgb(236 44 146 / 0.14)",
+        "oklch": "oklch(63.2% 0.236 354.6 / 0.14)",
+        "tonalRamp": [
+          "oklch(15.0% 0.236 354.6)",
+          "oklch(26.4% 0.236 354.6)",
+          "oklch(37.9% 0.236 354.6)",
+          "oklch(49.3% 0.236 354.6)",
+          "oklch(60.7% 0.236 354.6)",
+          "oklch(72.1% 0.236 354.6)",
+          "oklch(83.6% 0.236 354.6)",
+          "oklch(95.0% 0.236 354.6)"
+        ]
+      },
+      "signal-line": {
+        "role": "primary",
+        "displayName": "Selection Line",
+        "canonical": "rgb(236 44 146 / 0.5)",
+        "oklch": "oklch(63.2% 0.236 354.6 / 0.5)",
+        "tonalRamp": [
+          "oklch(15.0% 0.236 354.6)",
+          "oklch(26.4% 0.236 354.6)",
+          "oklch(37.9% 0.236 354.6)",
+          "oklch(49.3% 0.236 354.6)",
+          "oklch(60.7% 0.236 354.6)",
+          "oklch(72.1% 0.236 354.6)",
+          "oklch(83.6% 0.236 354.6)",
+          "oklch(95.0% 0.236 354.6)"
+        ]
+      },
+      "signal-glow": {
+        "role": "primary",
+        "displayName": "Glow Pink",
+        "canonical": "#ff8cc6",
+        "oklch": "oklch(78.1% 0.153 349.7)",
+        "tonalRamp": [
+          "oklch(15.0% 0.153 349.7)",
+          "oklch(26.4% 0.153 349.7)",
+          "oklch(37.9% 0.153 349.7)",
+          "oklch(49.3% 0.153 349.7)",
+          "oklch(60.7% 0.153 349.7)",
+          "oklch(72.1% 0.153 349.7)",
+          "oklch(83.6% 0.153 349.7)",
+          "oklch(95.0% 0.153 349.7)"
+        ]
+      },
+      "field-hot": {
+        "role": "primary",
+        "displayName": "Field Hot End",
+        "canonical": "#ff5fae",
+        "oklch": "oklch(71.5% 0.208 353.1)",
+        "tonalRamp": [
+          "oklch(15.0% 0.208 353.1)",
+          "oklch(26.4% 0.208 353.1)",
+          "oklch(37.9% 0.208 353.1)",
+          "oklch(49.3% 0.208 353.1)",
+          "oklch(60.7% 0.208 353.1)",
+          "oklch(72.1% 0.208 353.1)",
+          "oklch(83.6% 0.208 353.1)",
+          "oklch(95.0% 0.208 353.1)"
+        ]
+      },
+      "field-deep": {
+        "role": "primary",
+        "displayName": "Field Deep End",
+        "canonical": "#b8106a",
+        "oklch": "oklch(51.5% 0.203 356.5)",
+        "tonalRamp": [
+          "oklch(15.0% 0.203 356.5)",
+          "oklch(26.4% 0.203 356.5)",
+          "oklch(37.9% 0.203 356.5)",
+          "oklch(49.3% 0.203 356.5)",
+          "oklch(60.7% 0.203 356.5)",
+          "oklch(72.1% 0.203 356.5)",
+          "oklch(83.6% 0.203 356.5)",
+          "oklch(95.0% 0.203 356.5)"
+        ]
+      },
+      "on-signal": {
+        "role": "primary",
+        "displayName": "On Signal White",
+        "canonical": "#ffffff",
+        "oklch": "oklch(100.0% 0.000 89.9)",
+        "tonalRamp": [
+          "oklch(15.0% 0.000 89.9)",
+          "oklch(26.4% 0.000 89.9)",
+          "oklch(37.9% 0.000 89.9)",
+          "oklch(49.3% 0.000 89.9)",
+          "oklch(60.7% 0.000 89.9)",
+          "oklch(72.1% 0.000 89.9)",
+          "oklch(83.6% 0.000 89.9)",
+          "oklch(95.0% 0.000 89.9)"
+        ]
+      },
+      "bg": {
+        "role": "neutral",
+        "displayName": "Graphite Void",
+        "canonical": "#0a0a0d",
+        "oklch": "oklch(14.6% 0.006 285.6)",
+        "tonalRamp": [
+          "oklch(15.0% 0.006 285.6)",
+          "oklch(26.4% 0.006 285.6)",
+          "oklch(37.9% 0.006 285.6)",
+          "oklch(49.3% 0.006 285.6)",
+          "oklch(60.7% 0.006 285.6)",
+          "oklch(72.1% 0.006 285.6)",
+          "oklch(83.6% 0.006 285.6)",
+          "oklch(95.0% 0.006 285.6)"
+        ]
+      },
+      "bg-2": {
+        "role": "neutral",
+        "displayName": "Graphite",
+        "canonical": "#121216",
+        "oklch": "oklch(18.4% 0.008 285.6)",
+        "tonalRamp": [
+          "oklch(15.0% 0.008 285.6)",
+          "oklch(26.4% 0.008 285.6)",
+          "oklch(37.9% 0.008 285.6)",
+          "oklch(49.3% 0.008 285.6)",
+          "oklch(60.7% 0.008 285.6)",
+          "oklch(72.1% 0.008 285.6)",
+          "oklch(83.6% 0.008 285.6)",
+          "oklch(95.0% 0.008 285.6)"
+        ]
+      },
+      "bg-3": {
+        "role": "neutral",
+        "displayName": "Raised Graphite",
+        "canonical": "#1a1a20",
+        "oklch": "oklch(22.0% 0.012 285.4)",
+        "tonalRamp": [
+          "oklch(15.0% 0.012 285.4)",
+          "oklch(26.4% 0.012 285.4)",
+          "oklch(37.9% 0.012 285.4)",
+          "oklch(49.3% 0.012 285.4)",
+          "oklch(60.7% 0.012 285.4)",
+          "oklch(72.1% 0.012 285.4)",
+          "oklch(83.6% 0.012 285.4)",
+          "oklch(95.0% 0.012 285.4)"
+        ]
+      },
+      "bg-4": {
+        "role": "neutral",
+        "displayName": "Lifted Graphite",
+        "canonical": "#24242c",
+        "oklch": "oklch(26.4% 0.015 285.3)",
+        "tonalRamp": [
+          "oklch(15.0% 0.015 285.3)",
+          "oklch(26.4% 0.015 285.3)",
+          "oklch(37.9% 0.015 285.3)",
+          "oklch(49.3% 0.015 285.3)",
+          "oklch(60.7% 0.015 285.3)",
+          "oklch(72.1% 0.015 285.3)",
+          "oklch(83.6% 0.015 285.3)",
+          "oklch(95.0% 0.015 285.3)"
+        ]
+      },
+      "bar": {
+        "role": "neutral",
+        "displayName": "Bar Glass",
+        "canonical": "rgb(10 10 13 / 0.84)",
+        "oklch": "oklch(14.6% 0.006 285.6 / 0.84)",
+        "tonalRamp": [
+          "oklch(15.0% 0.006 285.6)",
+          "oklch(26.4% 0.006 285.6)",
+          "oklch(37.9% 0.006 285.6)",
+          "oklch(49.3% 0.006 285.6)",
+          "oklch(60.7% 0.006 285.6)",
+          "oklch(72.1% 0.006 285.6)",
+          "oklch(83.6% 0.006 285.6)",
+          "oklch(95.0% 0.006 285.6)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "rgb(255 255 255 / 0.08)",
+        "oklch": "oklch(100.0% 0.000 89.9 / 0.08)",
+        "tonalRamp": [
+          "oklch(15.0% 0.000 89.9)",
+          "oklch(26.4% 0.000 89.9)",
+          "oklch(37.9% 0.000 89.9)",
+          "oklch(49.3% 0.000 89.9)",
+          "oklch(60.7% 0.000 89.9)",
+          "oklch(72.1% 0.000 89.9)",
+          "oklch(83.6% 0.000 89.9)",
+          "oklch(95.0% 0.000 89.9)"
+        ]
+      },
+      "line-2": {
+        "role": "neutral",
+        "displayName": "Control Line",
+        "canonical": "rgb(255 255 255 / 0.14)",
+        "oklch": "oklch(100.0% 0.000 89.9 / 0.14)",
+        "tonalRamp": [
+          "oklch(15.0% 0.000 89.9)",
+          "oklch(26.4% 0.000 89.9)",
+          "oklch(37.9% 0.000 89.9)",
+          "oklch(49.3% 0.000 89.9)",
+          "oklch(60.7% 0.000 89.9)",
+          "oklch(72.1% 0.000 89.9)",
+          "oklch(83.6% 0.000 89.9)",
+          "oklch(95.0% 0.000 89.9)"
+        ]
+      },
+      "track": {
+        "role": "neutral",
+        "displayName": "Track",
+        "canonical": "rgb(255 255 255 / 0.1)",
+        "oklch": "oklch(100.0% 0.000 89.9 / 0.1)",
+        "tonalRamp": [
+          "oklch(15.0% 0.000 89.9)",
+          "oklch(26.4% 0.000 89.9)",
+          "oklch(37.9% 0.000 89.9)",
+          "oklch(49.3% 0.000 89.9)",
+          "oklch(60.7% 0.000 89.9)",
+          "oklch(72.1% 0.000 89.9)",
+          "oklch(83.6% 0.000 89.9)",
+          "oklch(95.0% 0.000 89.9)"
+        ]
+      },
+      "scrim": {
+        "role": "neutral",
+        "displayName": "Scrim",
+        "canonical": "rgb(0 0 0 / 0.6)",
+        "oklch": "oklch(0.0% 0.000 0.0 / 0.6)",
+        "tonalRamp": [
+          "oklch(15.0% 0.000 0.0)",
+          "oklch(26.4% 0.000 0.0)",
+          "oklch(37.9% 0.000 0.0)",
+          "oklch(49.3% 0.000 0.0)",
+          "oklch(60.7% 0.000 0.0)",
+          "oklch(72.1% 0.000 0.0)",
+          "oklch(83.6% 0.000 0.0)",
+          "oklch(95.0% 0.000 0.0)"
+        ]
+      },
+      "text": {
+        "role": "neutral",
+        "displayName": "Moon White",
+        "canonical": "#f4f3f7",
+        "oklch": "oklch(96.6% 0.005 297.7)",
+        "tonalRamp": [
+          "oklch(15.0% 0.005 297.7)",
+          "oklch(26.4% 0.005 297.7)",
+          "oklch(37.9% 0.005 297.7)",
+          "oklch(49.3% 0.005 297.7)",
+          "oklch(60.7% 0.005 297.7)",
+          "oklch(72.1% 0.005 297.7)",
+          "oklch(83.6% 0.005 297.7)",
+          "oklch(95.0% 0.005 297.7)"
+        ]
+      },
+      "text-2": {
+        "role": "neutral",
+        "displayName": "Dust",
+        "canonical": "#aba9b5",
+        "oklch": "oklch(74.0% 0.017 293.6)",
+        "tonalRamp": [
+          "oklch(15.0% 0.017 293.6)",
+          "oklch(26.4% 0.017 293.6)",
+          "oklch(37.9% 0.017 293.6)",
+          "oklch(49.3% 0.017 293.6)",
+          "oklch(60.7% 0.017 293.6)",
+          "oklch(72.1% 0.017 293.6)",
+          "oklch(83.6% 0.017 293.6)",
+          "oklch(95.0% 0.017 293.6)"
+        ]
+      },
+      "text-3": {
+        "role": "neutral",
+        "displayName": "Ash",
+        "canonical": "#8b8995",
+        "oklch": "oklch(63.6% 0.018 293.5)",
+        "tonalRamp": [
+          "oklch(15.0% 0.018 293.5)",
+          "oklch(26.4% 0.018 293.5)",
+          "oklch(37.9% 0.018 293.5)",
+          "oklch(49.3% 0.018 293.5)",
+          "oklch(60.7% 0.018 293.5)",
+          "oklch(72.1% 0.018 293.5)",
+          "oklch(83.6% 0.018 293.5)",
+          "oklch(95.0% 0.018 293.5)"
+        ]
+      },
+      "ok": {
+        "role": "status",
+        "displayName": "Signal Green",
+        "canonical": "#3ddc97",
+        "oklch": "oklch(79.7% 0.164 159.7)",
+        "tonalRamp": [
+          "oklch(15.0% 0.164 159.7)",
+          "oklch(26.4% 0.164 159.7)",
+          "oklch(37.9% 0.164 159.7)",
+          "oklch(49.3% 0.164 159.7)",
+          "oklch(60.7% 0.164 159.7)",
+          "oklch(72.1% 0.164 159.7)",
+          "oklch(83.6% 0.164 159.7)",
+          "oklch(95.0% 0.164 159.7)"
+        ]
+      },
+      "ok-soft": {
+        "role": "status",
+        "displayName": "Green Tint",
+        "canonical": "rgb(61 220 151 / 0.12)",
+        "oklch": "oklch(79.7% 0.164 159.7 / 0.12)",
+        "tonalRamp": [
+          "oklch(15.0% 0.164 159.7)",
+          "oklch(26.4% 0.164 159.7)",
+          "oklch(37.9% 0.164 159.7)",
+          "oklch(49.3% 0.164 159.7)",
+          "oklch(60.7% 0.164 159.7)",
+          "oklch(72.1% 0.164 159.7)",
+          "oklch(83.6% 0.164 159.7)",
+          "oklch(95.0% 0.164 159.7)"
+        ]
+      },
+      "warn": {
+        "role": "status",
+        "displayName": "Amber",
+        "canonical": "#f5b83d",
+        "oklch": "oklch(81.9% 0.150 80.8)",
+        "tonalRamp": [
+          "oklch(15.0% 0.150 80.8)",
+          "oklch(26.4% 0.150 80.8)",
+          "oklch(37.9% 0.150 80.8)",
+          "oklch(49.3% 0.150 80.8)",
+          "oklch(60.7% 0.150 80.8)",
+          "oklch(72.1% 0.150 80.8)",
+          "oklch(83.6% 0.150 80.8)",
+          "oklch(95.0% 0.150 80.8)"
+        ]
+      },
+      "warn-soft": {
+        "role": "status",
+        "displayName": "Amber Tint",
+        "canonical": "rgb(245 184 61 / 0.12)",
+        "oklch": "oklch(81.9% 0.150 80.8 / 0.12)",
+        "tonalRamp": [
+          "oklch(15.0% 0.150 80.8)",
+          "oklch(26.4% 0.150 80.8)",
+          "oklch(37.9% 0.150 80.8)",
+          "oklch(49.3% 0.150 80.8)",
+          "oklch(60.7% 0.150 80.8)",
+          "oklch(72.1% 0.150 80.8)",
+          "oklch(83.6% 0.150 80.8)",
+          "oklch(95.0% 0.150 80.8)"
+        ]
+      },
+      "err": {
+        "role": "status",
+        "displayName": "Ember",
+        "canonical": "#ff6b57",
+        "oklch": "oklch(70.8% 0.185 30.1)",
+        "tonalRamp": [
+          "oklch(15.0% 0.185 30.1)",
+          "oklch(26.4% 0.185 30.1)",
+          "oklch(37.9% 0.185 30.1)",
+          "oklch(49.3% 0.185 30.1)",
+          "oklch(60.7% 0.185 30.1)",
+          "oklch(72.1% 0.185 30.1)",
+          "oklch(83.6% 0.185 30.1)",
+          "oklch(95.0% 0.185 30.1)"
+        ]
+      },
+      "err-soft": {
+        "role": "status",
+        "displayName": "Ember Tint",
+        "canonical": "rgb(255 107 87 / 0.12)",
+        "oklch": "oklch(70.8% 0.185 30.1 / 0.12)",
+        "tonalRamp": [
+          "oklch(15.0% 0.185 30.1)",
+          "oklch(26.4% 0.185 30.1)",
+          "oklch(37.9% 0.185 30.1)",
+          "oklch(49.3% 0.185 30.1)",
+          "oklch(60.7% 0.185 30.1)",
+          "oklch(72.1% 0.185 30.1)",
+          "oklch(83.6% 0.185 30.1)",
+          "oklch(95.0% 0.185 30.1)"
+        ]
+      },
+      "err-line": {
+        "role": "status",
+        "displayName": "Ember Line",
+        "canonical": "rgb(255 107 87 / 0.32)",
+        "oklch": "oklch(70.8% 0.185 30.1 / 0.32)",
+        "tonalRamp": [
+          "oklch(15.0% 0.185 30.1)",
+          "oklch(26.4% 0.185 30.1)",
+          "oklch(37.9% 0.185 30.1)",
+          "oklch(49.3% 0.185 30.1)",
+          "oklch(60.7% 0.185 30.1)",
+          "oklch(72.1% 0.185 30.1)",
+          "oklch(83.6% 0.185 30.1)",
+          "oklch(95.0% 0.185 30.1)"
+        ]
+      },
+      "light-bg": {
+        "role": "neutral",
+        "displayName": "Pale Lilac Paper",
+        "canonical": "#f2f1f5",
+        "oklch": "oklch(96.0% 0.005 297.7)",
+        "tonalRamp": [
+          "oklch(15.0% 0.005 297.7)",
+          "oklch(26.4% 0.005 297.7)",
+          "oklch(37.9% 0.005 297.7)",
+          "oklch(49.3% 0.005 297.7)",
+          "oklch(60.7% 0.005 297.7)",
+          "oklch(72.1% 0.005 297.7)",
+          "oklch(83.6% 0.005 297.7)",
+          "oklch(95.0% 0.005 297.7)"
+        ]
+      },
+      "light-bg-2": {
+        "role": "neutral",
+        "displayName": "Paper White",
+        "canonical": "#ffffff",
+        "oklch": "oklch(100.0% 0.000 89.9)",
+        "tonalRamp": [
+          "oklch(15.0% 0.000 89.9)",
+          "oklch(26.4% 0.000 89.9)",
+          "oklch(37.9% 0.000 89.9)",
+          "oklch(49.3% 0.000 89.9)",
+          "oklch(60.7% 0.000 89.9)",
+          "oklch(72.1% 0.000 89.9)",
+          "oklch(83.6% 0.000 89.9)",
+          "oklch(95.0% 0.000 89.9)"
+        ]
+      },
+      "light-bg-3": {
+        "role": "neutral",
+        "displayName": "Raised Paper",
+        "canonical": "#ffffff",
+        "oklch": "oklch(100.0% 0.000 89.9)",
+        "tonalRamp": [
+          "oklch(15.0% 0.000 89.9)",
+          "oklch(26.4% 0.000 89.9)",
+          "oklch(37.9% 0.000 89.9)",
+          "oklch(49.3% 0.000 89.9)",
+          "oklch(60.7% 0.000 89.9)",
+          "oklch(72.1% 0.000 89.9)",
+          "oklch(83.6% 0.000 89.9)",
+          "oklch(95.0% 0.000 89.9)"
+        ]
+      },
+      "light-bg-4": {
+        "role": "neutral",
+        "displayName": "Lifted Paper",
+        "canonical": "#eceaf0",
+        "oklch": "oklch(94.0% 0.008 301.4)",
+        "tonalRamp": [
+          "oklch(15.0% 0.008 301.4)",
+          "oklch(26.4% 0.008 301.4)",
+          "oklch(37.9% 0.008 301.4)",
+          "oklch(49.3% 0.008 301.4)",
+          "oklch(60.7% 0.008 301.4)",
+          "oklch(72.1% 0.008 301.4)",
+          "oklch(83.6% 0.008 301.4)",
+          "oklch(95.0% 0.008 301.4)"
+        ]
+      },
+      "light-bar": {
+        "role": "neutral",
+        "displayName": "Bar Glass (light theme)",
+        "canonical": "rgb(242 241 245 / 0.86)",
+        "oklch": "oklch(96.0% 0.005 297.7 / 0.86)",
+        "tonalRamp": [
+          "oklch(15.0% 0.005 297.7)",
+          "oklch(26.4% 0.005 297.7)",
+          "oklch(37.9% 0.005 297.7)",
+          "oklch(49.3% 0.005 297.7)",
+          "oklch(60.7% 0.005 297.7)",
+          "oklch(72.1% 0.005 297.7)",
+          "oklch(83.6% 0.005 297.7)",
+          "oklch(95.0% 0.005 297.7)"
+        ]
+      },
+      "light-line": {
+        "role": "neutral",
+        "displayName": "Hairline (light theme)",
+        "canonical": "rgb(16 14 24 / 0.09)",
+        "oklch": "oklch(17.1% 0.021 293.3 / 0.09)",
+        "tonalRamp": [
+          "oklch(15.0% 0.021 293.3)",
+          "oklch(26.4% 0.021 293.3)",
+          "oklch(37.9% 0.021 293.3)",
+          "oklch(49.3% 0.021 293.3)",
+          "oklch(60.7% 0.021 293.3)",
+          "oklch(72.1% 0.021 293.3)",
+          "oklch(83.6% 0.021 293.3)",
+          "oklch(95.0% 0.021 293.3)"
+        ]
+      },
+      "light-line-2": {
+        "role": "neutral",
+        "displayName": "Control Line (light theme)",
+        "canonical": "rgb(16 14 24 / 0.16)",
+        "oklch": "oklch(17.1% 0.021 293.3 / 0.16)",
+        "tonalRamp": [
+          "oklch(15.0% 0.021 293.3)",
+          "oklch(26.4% 0.021 293.3)",
+          "oklch(37.9% 0.021 293.3)",
+          "oklch(49.3% 0.021 293.3)",
+          "oklch(60.7% 0.021 293.3)",
+          "oklch(72.1% 0.021 293.3)",
+          "oklch(83.6% 0.021 293.3)",
+          "oklch(95.0% 0.021 293.3)"
+        ]
+      },
+      "light-track": {
+        "role": "neutral",
+        "displayName": "Track (light theme)",
+        "canonical": "rgb(16 14 24 / 0.1)",
+        "oklch": "oklch(17.1% 0.021 293.3 / 0.1)",
+        "tonalRamp": [
+          "oklch(15.0% 0.021 293.3)",
+          "oklch(26.4% 0.021 293.3)",
+          "oklch(37.9% 0.021 293.3)",
+          "oklch(49.3% 0.021 293.3)",
+          "oklch(60.7% 0.021 293.3)",
+          "oklch(72.1% 0.021 293.3)",
+          "oklch(83.6% 0.021 293.3)",
+          "oklch(95.0% 0.021 293.3)"
+        ]
+      },
+      "light-scrim": {
+        "role": "neutral",
+        "displayName": "Scrim (light theme)",
+        "canonical": "rgb(16 14 24 / 0.4)",
+        "oklch": "oklch(17.1% 0.021 293.3 / 0.4)",
+        "tonalRamp": [
+          "oklch(15.0% 0.021 293.3)",
+          "oklch(26.4% 0.021 293.3)",
+          "oklch(37.9% 0.021 293.3)",
+          "oklch(49.3% 0.021 293.3)",
+          "oklch(60.7% 0.021 293.3)",
+          "oklch(72.1% 0.021 293.3)",
+          "oklch(83.6% 0.021 293.3)",
+          "oklch(95.0% 0.021 293.3)"
+        ]
+      },
+      "light-text": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#0f0e14",
+        "oklch": "oklch(16.8% 0.013 292.6)",
+        "tonalRamp": [
+          "oklch(15.0% 0.013 292.6)",
+          "oklch(26.4% 0.013 292.6)",
+          "oklch(37.9% 0.013 292.6)",
+          "oklch(49.3% 0.013 292.6)",
+          "oklch(60.7% 0.013 292.6)",
+          "oklch(72.1% 0.013 292.6)",
+          "oklch(83.6% 0.013 292.6)",
+          "oklch(95.0% 0.013 292.6)"
+        ]
+      },
+      "light-text-2": {
+        "role": "neutral",
+        "displayName": "Slate Ink",
+        "canonical": "#4a4855",
+        "oklch": "oklch(40.9% 0.022 292.5)",
+        "tonalRamp": [
+          "oklch(15.0% 0.022 292.5)",
+          "oklch(26.4% 0.022 292.5)",
+          "oklch(37.9% 0.022 292.5)",
+          "oklch(49.3% 0.022 292.5)",
+          "oklch(60.7% 0.022 292.5)",
+          "oklch(72.1% 0.022 292.5)",
+          "oklch(83.6% 0.022 292.5)",
+          "oklch(95.0% 0.022 292.5)"
+        ]
+      },
+      "light-text-3": {
+        "role": "neutral",
+        "displayName": "Ash Ink",
+        "canonical": "#64626e",
+        "oklch": "oklch(50.2% 0.019 293.4)",
+        "tonalRamp": [
+          "oklch(15.0% 0.019 293.4)",
+          "oklch(26.4% 0.019 293.4)",
+          "oklch(37.9% 0.019 293.4)",
+          "oklch(49.3% 0.019 293.4)",
+          "oklch(60.7% 0.019 293.4)",
+          "oklch(72.1% 0.019 293.4)",
+          "oklch(83.6% 0.019 293.4)",
+          "oklch(95.0% 0.019 293.4)"
+        ]
+      },
+      "light-signal-ink": {
+        "role": "primary",
+        "displayName": "Pink Readout (light theme)",
+        "canonical": "#c0166f",
+        "oklch": "oklch(53.3% 0.207 356.7)",
+        "tonalRamp": [
+          "oklch(15.0% 0.207 356.7)",
+          "oklch(26.4% 0.207 356.7)",
+          "oklch(37.9% 0.207 356.7)",
+          "oklch(49.3% 0.207 356.7)",
+          "oklch(60.7% 0.207 356.7)",
+          "oklch(72.1% 0.207 356.7)",
+          "oklch(83.6% 0.207 356.7)",
+          "oklch(95.0% 0.207 356.7)"
+        ]
+      },
+      "light-signal-soft": {
+        "role": "primary",
+        "displayName": "Selection Tint (light theme)",
+        "canonical": "rgb(236 44 146 / 0.1)",
+        "oklch": "oklch(63.2% 0.236 354.6 / 0.1)",
+        "tonalRamp": [
+          "oklch(15.0% 0.236 354.6)",
+          "oklch(26.4% 0.236 354.6)",
+          "oklch(37.9% 0.236 354.6)",
+          "oklch(49.3% 0.236 354.6)",
+          "oklch(60.7% 0.236 354.6)",
+          "oklch(72.1% 0.236 354.6)",
+          "oklch(83.6% 0.236 354.6)",
+          "oklch(95.0% 0.236 354.6)"
+        ]
+      },
+      "light-signal-line": {
+        "role": "primary",
+        "displayName": "Selection Line (light theme)",
+        "canonical": "rgb(212 27 126 / 0.45)",
+        "oklch": "oklch(57.6% 0.223 355.7 / 0.45)",
+        "tonalRamp": [
+          "oklch(15.0% 0.223 355.7)",
+          "oklch(26.4% 0.223 355.7)",
+          "oklch(37.9% 0.223 355.7)",
+          "oklch(49.3% 0.223 355.7)",
+          "oklch(60.7% 0.223 355.7)",
+          "oklch(72.1% 0.223 355.7)",
+          "oklch(83.6% 0.223 355.7)",
+          "oklch(95.0% 0.223 355.7)"
+        ]
+      },
+      "light-ok": {
+        "role": "status",
+        "displayName": "Signal Green (light theme)",
+        "canonical": "#0c6b44",
+        "oklch": "oklch(56.1% 0.124 158.9)",
+        "tonalRamp": [
+          "oklch(15.0% 0.124 158.9)",
+          "oklch(26.4% 0.124 158.9)",
+          "oklch(37.9% 0.124 158.9)",
+          "oklch(49.3% 0.124 158.9)",
+          "oklch(60.7% 0.124 158.9)",
+          "oklch(72.1% 0.124 158.9)",
+          "oklch(83.6% 0.124 158.9)",
+          "oklch(95.0% 0.124 158.9)"
+        ]
+      },
+      "light-ok-soft": {
+        "role": "status",
+        "displayName": "Green Tint (light theme)",
+        "canonical": "rgb(19 138 89 / 0.1)",
+        "oklch": "oklch(56.1% 0.124 158.9 / 0.1)",
+        "tonalRamp": [
+          "oklch(15.0% 0.124 158.9)",
+          "oklch(26.4% 0.124 158.9)",
+          "oklch(37.9% 0.124 158.9)",
+          "oklch(49.3% 0.124 158.9)",
+          "oklch(60.7% 0.124 158.9)",
+          "oklch(72.1% 0.124 158.9)",
+          "oklch(83.6% 0.124 158.9)",
+          "oklch(95.0% 0.124 158.9)"
+        ]
+      },
+      "light-warn": {
+        "role": "status",
+        "displayName": "Amber (light theme)",
+        "canonical": "#875700",
+        "oklch": "oklch(54.8% 0.117 72.5)",
+        "tonalRamp": [
+          "oklch(15.0% 0.117 72.5)",
+          "oklch(26.4% 0.117 72.5)",
+          "oklch(37.9% 0.117 72.5)",
+          "oklch(49.3% 0.117 72.5)",
+          "oklch(60.7% 0.117 72.5)",
+          "oklch(72.1% 0.117 72.5)",
+          "oklch(83.6% 0.117 72.5)",
+          "oklch(95.0% 0.117 72.5)"
+        ]
+      },
+      "light-warn-soft": {
+        "role": "status",
+        "displayName": "Amber Tint (light theme)",
+        "canonical": "rgb(214 140 0 / 0.12)",
+        "oklch": "oklch(69.9% 0.150 72.1 / 0.12)",
+        "tonalRamp": [
+          "oklch(15.0% 0.150 72.1)",
+          "oklch(26.4% 0.150 72.1)",
+          "oklch(37.9% 0.150 72.1)",
+          "oklch(49.3% 0.150 72.1)",
+          "oklch(60.7% 0.150 72.1)",
+          "oklch(72.1% 0.150 72.1)",
+          "oklch(83.6% 0.150 72.1)",
+          "oklch(95.0% 0.150 72.1)"
+        ]
+      },
+      "light-err": {
+        "role": "status",
+        "displayName": "Ember (light theme)",
+        "canonical": "#c7361f",
+        "oklch": "oklch(55.1% 0.185 31.8)",
+        "tonalRamp": [
+          "oklch(15.0% 0.185 31.8)",
+          "oklch(26.4% 0.185 31.8)",
+          "oklch(37.9% 0.185 31.8)",
+          "oklch(49.3% 0.185 31.8)",
+          "oklch(60.7% 0.185 31.8)",
+          "oklch(72.1% 0.185 31.8)",
+          "oklch(83.6% 0.185 31.8)",
+          "oklch(95.0% 0.185 31.8)"
+        ]
+      },
+      "light-err-soft": {
+        "role": "status",
+        "displayName": "Ember Tint (light theme)",
+        "canonical": "rgb(199 54 31 / 0.08)",
+        "oklch": "oklch(55.1% 0.185 31.8 / 0.08)",
+        "tonalRamp": [
+          "oklch(15.0% 0.185 31.8)",
+          "oklch(26.4% 0.185 31.8)",
+          "oklch(37.9% 0.185 31.8)",
+          "oklch(49.3% 0.185 31.8)",
+          "oklch(60.7% 0.185 31.8)",
+          "oklch(72.1% 0.185 31.8)",
+          "oklch(83.6% 0.185 31.8)",
+          "oklch(95.0% 0.185 31.8)"
+        ]
+      },
+      "light-err-line": {
+        "role": "status",
+        "displayName": "Ember Line (light theme)",
+        "canonical": "rgb(199 54 31 / 0.3)",
+        "oklch": "oklch(55.1% 0.185 31.8 / 0.3)",
+        "tonalRamp": [
+          "oklch(15.0% 0.185 31.8)",
+          "oklch(26.4% 0.185 31.8)",
+          "oklch(37.9% 0.185 31.8)",
+          "oklch(49.3% 0.185 31.8)",
+          "oklch(60.7% 0.185 31.8)",
+          "oklch(72.1% 0.185 31.8)",
+          "oklch(83.6% 0.185 31.8)",
+          "oklch(95.0% 0.185 31.8)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Page titles and the Launch greeting; 26px, 30px from 720px, 32px from 1024px. Hebrew: Assistant 800, no tracking."
+      },
+      "readout": {
+        "displayName": "Readout",
+        "purpose": "The mission percent on job detail; unit beside it in 16px Ash."
+      },
+      "readout-sm": {
+        "displayName": "Readout small",
+        "purpose": "Percent in in-flight cards; the wordmark uses the same face at 15px."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section heads and empty-state titles."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Job, row and file titles; two-line clamp on jobs."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Running text in Dust; 16px Assistant in Hebrew."
+      },
+      "meta": {
+        "displayName": "Meta",
+        "purpose": "Job meta with dot separators, hints, timestamps (12.5-13px, Ash)."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Field labels, chips, segmented options."
+      },
+      "button": {
+        "displayName": "Button",
+        "purpose": "Button labels; 13px small, 12.5px extra-small."
+      },
+      "status": {
+        "displayName": "Status",
+        "purpose": "Uppercase status pills and file-kind tags only; Hebrew 12px without tracking or case."
+      },
+      "data": {
+        "displayName": "Data",
+        "purpose": "Job logs; inline IDs at 0.86em."
+      }
+    },
+    "shadows": [
+      {
+        "name": "shadow-1",
+        "value": "0 1px 2px rgb(0 0 0 / 0.4), 0 10px 24px -16px rgb(0 0 0 / 0.75)",
+        "light": "0 1px 2px rgb(16 14 24 / 0.06), 0 10px 24px -18px rgb(16 14 24 / 0.3)",
+        "purpose": "Ambient low: panels, selected segment, current sidebar row, selected settings tab."
+      },
+      {
+        "name": "shadow-2",
+        "value": "0 2px 8px rgb(0 0 0 / 0.35), 0 26px 56px -24px rgb(0 0 0 / 0.85)",
+        "light": "0 2px 8px rgb(16 14 24 / 0.08), 0 26px 56px -26px rgb(16 14 24 / 0.4)",
+        "purpose": "Ambient high: composer, bottom sheet, toast."
+      },
+      {
+        "name": "signal-glow",
+        "value": "inset 0 1px 0 rgb(255 255 255 / 0.22), 0 10px 22px -12px rgb(236 44 146 / 0.75)",
+        "purpose": "Primary buttons only."
+      },
+      {
+        "name": "mark-glow",
+        "value": "0 6px 16px -8px rgb(236 44 146 / 0.8)",
+        "purpose": "The 32px brand mark."
+      },
+      {
+        "name": "helmet-drop",
+        "value": "drop-shadow(0 18px 24px rgb(60 0 30 / 0.5))",
+        "purpose": "filter on the helmet over the magenta field."
+      },
+      {
+        "name": "edge",
+        "value": "linear-gradient(180deg, rgb(255 255 255 / 0.17), rgb(255 255 255 / 0.05) 42%, rgb(255 255 255 / 0.03))",
+        "light": "linear-gradient(180deg, rgb(16 14 24 / 0.07), rgb(16 14 24 / 0.11))",
+        "purpose": "1px light-catch border-box gradient on panels and the sheet."
+      },
+      {
+        "name": "rim",
+        "value": "linear-gradient(120deg, rgb(255 255 255 / 0.6), rgb(255 255 255 / 0.1) 28%, rgb(255 255 255 / 0.42) 52%, rgb(255 255 255 / 0.07) 74%, rgb(255 255 255 / 0.32))",
+        "light": "linear-gradient(120deg, rgb(16 14 24 / 0.32), rgb(16 14 24 / 0.08) 30%, rgb(16 14 24 / 0.24) 52%, rgb(16 14 24 / 0.06) 74%, rgb(16 14 24 / 0.2))",
+        "purpose": "1.5px chrome rim on the composer and dropzone."
+      },
+      {
+        "name": "rim-active",
+        "value": "linear-gradient(120deg, #ec2c92, #ff8cc6 50%, #ec2c92)",
+        "purpose": "Composer focus and dropzone drag-over."
+      },
+      {
+        "name": "glass",
+        "value": "background: rgb(10 10 13 / 0.84); backdrop-filter: blur(16px) saturate(150%)",
+        "purpose": "Top bar and tab bar."
+      },
+      {
+        "name": "magenta-field",
+        "value": "radial-gradient(130% 150% at 90% 0%, #ff5fae 0%, #ec2c92 32%, #b8106a 72%, #8a0a4f 100%)",
+        "purpose": "Launch greeting band; the hot spot must sit at the inline end (mirror in RTL)."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Every transition and entrance."
+      },
+      {
+        "name": "state",
+        "value": "180ms",
+        "purpose": "Colour, border and shadow changes on buttons, chips, inputs, nav rows."
+      },
+      {
+        "name": "press",
+        "value": "120ms translateY(1px)",
+        "purpose": "Button press."
+      },
+      {
+        "name": "disclosure",
+        "value": "200ms rotate(180deg)",
+        "purpose": "More options chevron."
+      },
+      {
+        "name": "switch",
+        "value": "220ms",
+        "purpose": "Switch knob along the inline axis."
+      },
+      {
+        "name": "toast",
+        "value": "250ms, 10px rise, 2.6s dwell",
+        "purpose": "Toast in and out."
+      },
+      {
+        "name": "screen-in",
+        "value": "280ms, opacity 0 and 6px rise",
+        "purpose": "Screen change."
+      },
+      {
+        "name": "sheet-in",
+        "value": "340ms, 40px rise",
+        "purpose": "Bottom sheet."
+      },
+      {
+        "name": "track-fill",
+        "value": "600ms clip-path",
+        "purpose": "Active telemetry segment advancing."
+      },
+      {
+        "name": "dock",
+        "value": "700ms from opacity 0, translateY(14px) scale(0.97) blur(6px)",
+        "purpose": "A launched job docking into In flight."
+      },
+      {
+        "name": "sheen",
+        "value": "1.8s infinite, white 55% band 40% wide",
+        "purpose": "Active segment only while work runs; removed under reduced motion; reversed in RTL."
+      },
+      {
+        "name": "live-pulse",
+        "value": "1.6s infinite opacity 1 to 0.25",
+        "purpose": "Live dot on the Rec pill."
+      },
+      {
+        "name": "shimmer",
+        "value": "1.4s linear infinite",
+        "purpose": "Skeleton loading."
+      },
+      {
+        "name": "spin",
+        "value": "0.7s linear infinite",
+        "purpose": "Button loading ring."
+      },
+      {
+        "name": "launch-moment",
+        "value": "loading ~450ms -> dock 700ms -> queued 900ms -> fetch 4400ms -> process 1700ms -> ready",
+        "purpose": "Prototype timing of the launch sequence; real jobs follow server events."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "all animation and transition durations 0.01ms; sheen removed; scroll jumps",
+        "purpose": "prefers-reduced-motion: reduce."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "phone-narrow",
+        "value": "max-width: 479px",
+        "purpose": "Paste button collapses to its icon."
+      },
+      {
+        "name": "tablet",
+        "value": "720px",
+        "purpose": "Gutter 24px, display 30px, 3-column library, 4-column stats."
+      },
+      {
+        "name": "signin-split",
+        "value": "960px",
+        "purpose": "Sign-in becomes brand panel + form columns."
+      },
+      {
+        "name": "desktop",
+        "value": "1024px",
+        "purpose": "Sidebar replaces top bar and tab bar; composer under the band; two-column payload and detail."
+      },
+      {
+        "name": "wide",
+        "value": "1280px",
+        "purpose": "Launch adds the 340px sticky in-flight column and Ready panel."
+      },
+      {
+        "name": "xl",
+        "value": "1440px",
+        "purpose": "5-column library."
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one primary action per region (Launch, Sign in, Download all): Pressed Magenta pill with the signal glow.",
+      "html": "<button class=\"ds-btn ds-btn-primary\" type=\"button\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z\"/><path d=\"m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z\"/><path d=\"M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0\"/><path d=\"M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5\"/></svg><span>Launch · 720p MP4</span></button>",
+      "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding-inline: 18px; border-radius: var(--r-pill, 999px); border: 1px solid transparent; font: 700 14px/1 var(--font-ui, \"Raleway\", \"Assistant\", system-ui, sans-serif); letter-spacing: 0.01em; white-space: nowrap; cursor: pointer; transition: background-color 0.18s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)), border-color 0.18s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)), color 0.18s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)), transform 0.12s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)); } .ds-btn:active { transform: translateY(1px); } .ds-btn:focus-visible { outline: 2px solid var(--signal, #ec2c92); outline-offset: 2px; } .ds-btn-xs { min-height: 30px; padding-inline: 11px; font-size: 12.5px; gap: 6px; } .ds-btn-primary { background: var(--signal-fill, #d41b7e); color: #fff; box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.22), 0 10px 22px -12px rgb(236 44 146 / 0.75); } .ds-btn-primary:hover { background: var(--signal-fill-hover, #db2084); }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Supporting actions and every error-fixing action: Raised Graphite pill with a Control Line border.",
+      "html": "<button class=\"ds-btn ds-btn-secondary\" type=\"button\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5\"/><path d=\"M8.5 8.5v.01\"/><path d=\"M16 15.5v.01\"/><path d=\"M12 12v.01\"/><path d=\"M11 17v.01\"/><path d=\"M7 14v.01\"/></svg><span>Add cookies</span></button>",
+      "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding-inline: 18px; border-radius: var(--r-pill, 999px); border: 1px solid transparent; font: 700 14px/1 var(--font-ui, \"Raleway\", \"Assistant\", system-ui, sans-serif); letter-spacing: 0.01em; white-space: nowrap; cursor: pointer; transition: background-color 0.18s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)), border-color 0.18s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)), color 0.18s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)), transform 0.12s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)); } .ds-btn:active { transform: translateY(1px); } .ds-btn:focus-visible { outline: 2px solid var(--signal, #ec2c92); outline-offset: 2px; } .ds-btn-xs { min-height: 30px; padding-inline: 11px; font-size: 12.5px; gap: 6px; } .ds-btn-secondary { background: var(--bg-3, #1a1a20); color: var(--text, #f4f3f7); border-color: var(--line-2, rgb(255 255 255 / 0.14)); } .ds-btn-secondary:hover { background: var(--bg-4, #24242c); }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Icon tools and Retry beside a fix: transparent until hovered.",
+      "html": "<button class=\"ds-btn ds-btn-ghost\" type=\"button\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8\"/><path d=\"M3 3v5h5\"/></svg><span>Retry</span></button>",
+      "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding-inline: 18px; border-radius: var(--r-pill, 999px); border: 1px solid transparent; font: 700 14px/1 var(--font-ui, \"Raleway\", \"Assistant\", system-ui, sans-serif); letter-spacing: 0.01em; white-space: nowrap; cursor: pointer; transition: background-color 0.18s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)), border-color 0.18s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)), color 0.18s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)), transform 0.12s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)); } .ds-btn:active { transform: translateY(1px); } .ds-btn:focus-visible { outline: 2px solid var(--signal, #ec2c92); outline-offset: 2px; } .ds-btn-xs { min-height: 30px; padding-inline: 11px; font-size: 12.5px; gap: 6px; } .ds-btn-ghost { background: transparent; color: var(--text-2, #aba9b5); } .ds-btn-ghost:hover { background: var(--bg-3, #1a1a20); color: var(--text, #f4f3f7); }"
+    },
+    {
+      "name": "Quality Chips",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Single-choice option chips with a trailing size; the selected chip takes the magenta selection tint.",
+      "html": "<div class=\"ds-chip-row\" role=\"group\" aria-label=\"Quality\"><button class=\"ds-chip\" type=\"button\" aria-pressed=\"false\">1080p <small>620 MB</small></button><button class=\"ds-chip\" type=\"button\" aria-pressed=\"true\">720p <small>312 MB</small></button><button class=\"ds-chip\" type=\"button\" aria-pressed=\"false\">MP3 <small>20 MB</small></button></div>",
+      "css": ".ds-chip-row { display: flex; flex-wrap: wrap; gap: 8px; } .ds-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 38px; padding-inline: 14px; border-radius: var(--r-pill, 999px); border: 1px solid var(--line-2, rgb(255 255 255 / 0.14)); background: transparent; color: var(--text-2, #aba9b5); font: 650 13px/1 var(--font-ui, \"Raleway\", \"Assistant\", system-ui, sans-serif); cursor: pointer; transition: background-color 0.18s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)), border-color 0.18s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)), color 0.18s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)); } .ds-chip small { font: 600 12px/1 var(--font-ui, \"Raleway\", \"Assistant\", system-ui, sans-serif); color: var(--text-3, #8b8995); font-variant-numeric: tabular-nums lining-nums; } .ds-chip:hover { color: var(--text, #f4f3f7); border-color: var(--text-3, #8b8995); } .ds-chip:focus-visible { outline: 2px solid var(--signal, #ec2c92); outline-offset: 2px; } .ds-chip[aria-pressed=\"true\"] { background: var(--signal-soft, rgb(236 44 146 / 0.14)); border-color: var(--signal-line, rgb(236 44 146 / 0.5)); color: var(--text, #f4f3f7); } .ds-chip[aria-pressed=\"true\"] small { color: var(--signal-ink, #f56aaf); }"
+    },
+    {
+      "name": "Segmented Control",
+      "kind": "chip",
+      "refersTo": "segmented",
+      "description": "Small exclusive choices (container, deliver to, job filter): pill options on a Graphite track.",
+      "html": "<div class=\"ds-seg\" role=\"group\" aria-label=\"Container\"><button type=\"button\" aria-pressed=\"true\">MP4</button><button type=\"button\" aria-pressed=\"false\">MKV</button><button type=\"button\" aria-pressed=\"false\">WebM</button></div>",
+      "css": ".ds-seg { display: inline-flex; gap: 2px; padding: 3px; background: var(--bg-2, #121216); border: 1px solid var(--line, rgb(255 255 255 / 0.08)); border-radius: var(--r-pill, 999px); } .ds-seg button { min-height: 34px; padding-inline: 14px; border: 0; border-radius: var(--r-pill, 999px); background: transparent; color: var(--text-2, #aba9b5); font: 650 13px/1 var(--font-ui, \"Raleway\", \"Assistant\", system-ui, sans-serif); cursor: pointer; transition: color 0.18s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)); } .ds-seg button:hover { color: var(--text, #f4f3f7); } .ds-seg button:focus-visible { outline: 2px solid var(--signal, #ec2c92); outline-offset: 2px; } .ds-seg button[aria-pressed=\"true\"] { background: var(--bg-4, #24242c); color: var(--text, #f4f3f7); box-shadow: var(--shadow-1, 0 1px 2px rgb(0 0 0 / 0.4), 0 10px 24px -16px rgb(0 0 0 / 0.75)); }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Labelled 46px field with a leading icon; focus shifts the border to magenta with a soft halo.",
+      "html": "<div class=\"ds-field\"><label class=\"ds-label\" for=\"ds-email\">Email</label><div class=\"ds-input-group\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect width=\"20\" height=\"16\" x=\"2\" y=\"4\" rx=\"2\"/><path d=\"m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7\"/></svg><input class=\"ds-input\" id=\"ds-email\" type=\"email\" dir=\"ltr\" placeholder=\"you@example.com\"></div></div>",
+      "css": ".ds-field { display: grid; gap: 7px; max-width: 360px; } .ds-label { font: 650 13px/1.3 var(--font-ui, \"Raleway\", \"Assistant\", system-ui, sans-serif); color: var(--text-2, #aba9b5); } .ds-input-group { position: relative; } .ds-input-group > svg { position: absolute; inset-inline-start: 14px; top: 50%; translate: 0 -50%; color: var(--text-3, #8b8995); pointer-events: none; } .ds-input { width: 100%; min-height: 46px; padding-inline: 42px 14px; background: var(--bg-2, #121216); color: var(--text, #f4f3f7); border: 1px solid var(--line-2, rgb(255 255 255 / 0.14)); border-radius: var(--r, 12px); font: 500 15px/1.4 var(--font-ui, \"Raleway\", \"Assistant\", system-ui, sans-serif); transition: border-color 0.18s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)), box-shadow 0.18s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)); } .ds-input::placeholder { color: var(--text-3, #8b8995); opacity: 1; } .ds-input:hover { border-color: var(--text-3, #8b8995); } .ds-input:focus, .ds-input:focus-visible { outline: none; border-color: var(--signal-line, rgb(236 44 146 / 0.5)); box-shadow: 0 0 0 3px var(--signal-soft, rgb(236 44 146 / 0.14)); }"
+    },
+    {
+      "name": "Status Pills",
+      "kind": "chip",
+      "refersTo": "pill-ok",
+      "description": "Job and item state: small uppercase pills on a tint of their hue; Rec is white on Pressed Magenta with a pulsing dot.",
+      "html": "<div class=\"ds-pills\"><span class=\"ds-pill ds-pill-ok\">Ready</span><span class=\"ds-pill ds-pill-run\">5 / 8</span><span class=\"ds-pill ds-pill-err\">Failed</span><span class=\"ds-pill ds-pill-warn\">Paused</span><span class=\"ds-pill ds-pill-muted\">Queued</span><span class=\"ds-pill ds-pill-live\">Rec</span></div>",
+      "css": ".ds-pills { display: flex; flex-wrap: wrap; gap: 8px; } .ds-pill { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding-inline: 8px; border-radius: var(--r-pill, 999px); font: 750 10.5px/1 var(--font-ui, \"Raleway\", \"Assistant\", system-ui, sans-serif); letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; font-variant-numeric: tabular-nums; } .ds-pill-ok { background: var(--ok-soft, rgb(61 220 151 / 0.12)); color: var(--ok, #3ddc97); } .ds-pill-run { background: var(--signal-soft, rgb(236 44 146 / 0.14)); color: var(--signal-ink, #f56aaf); } .ds-pill-err { background: var(--err-soft, rgb(255 107 87 / 0.12)); color: var(--err, #ff6b57); } .ds-pill-warn { background: var(--warn-soft, rgb(245 184 61 / 0.12)); color: var(--warn, #f5b83d); } .ds-pill-muted { background: var(--bg-4, #24242c); color: var(--text-2, #aba9b5); } .ds-pill-live { background: var(--signal-fill, #d41b7e); color: #fff; } .ds-pill-live::before { content: \"\"; width: 7px; height: 7px; border-radius: 50%; background: currentColor; animation: ds-live 1.6s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)) infinite; } @keyframes ds-live { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } } @media (prefers-reduced-motion: reduce) { .ds-pill-live::before { animation: none; } }"
+    },
+    {
+      "name": "In-flight Card with Telemetry Track",
+      "kind": "custom",
+      "refersTo": "track-segment",
+      "description": "Signature: a raised panel showing a running job on the four-segment track (queued, fetch, process, ready) with Unbounded readout numerals and a sheen on the active segment.",
+      "html": "<a class=\"ds-flight\" href=\"#\"><span class=\"ds-thumb\" aria-hidden=\"true\"></span><span class=\"ds-flight-head\"><span class=\"ds-title\">Blender Open Movies</span><span class=\"ds-meta\"><span>Playlist</span><span>5 of 8 ready</span></span></span><span class=\"ds-progress\"><span class=\"ds-track\"><i class=\"done\"></i><i class=\"now\" style=\"--p:62%\"></i><i></i><i></i></span><span class=\"ds-telemetry\"><span><b>62%</b> Fetch</span><span>6.1 MB/s</span><span>3 min left</span></span></span></a>",
+      "css": ".ds-flight { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 10px 12px; padding: 12px; max-width: 340px; color: var(--text, #f4f3f7); text-decoration: none; background: linear-gradient(var(--bg-2, #121216), var(--bg-2, #121216)) padding-box, var(--edge, linear-gradient(180deg, rgb(255 255 255 / 0.17), rgb(255 255 255 / 0.05) 42%, rgb(255 255 255 / 0.03))) border-box; border: 1px solid transparent; border-radius: var(--r-l, 20px); box-shadow: var(--shadow-1, 0 1px 2px rgb(0 0 0 / 0.4), 0 10px 24px -16px rgb(0 0 0 / 0.75)); } .ds-flight:focus-visible { outline: 2px solid var(--signal, #ec2c92); outline-offset: 2px; } .ds-thumb { aspect-ratio: 16 / 9; border-radius: 10px; background: radial-gradient(120% 120% at 0% 0%, #2a1020 0%, #121216 60%); } .ds-flight-head { display: grid; gap: 3px; min-width: 0; } .ds-title { font: 700 14.5px/1.35 var(--font-ui, \"Raleway\", \"Assistant\", system-ui, sans-serif); } .ds-meta { display: flex; flex-wrap: wrap; column-gap: 16px; font: 500 12.5px/1.4 var(--font-ui, \"Raleway\", \"Assistant\", system-ui, sans-serif); color: var(--text-3, #8b8995); } .ds-meta > span { position: relative; } .ds-meta > span:not(:last-child)::after { content: \"\\00B7\"; position: absolute; inset-inline-end: -10px; opacity: 0.6; } .ds-progress { grid-column: 1 / -1; display: grid; gap: 7px; } .ds-track { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; } .ds-track > i { position: relative; height: 4px; border-radius: 2px; background: var(--track, rgb(255 255 255 / 0.1)); overflow: hidden; } .ds-track > i.done { background: var(--signal, #ec2c92); } .ds-track > i.now::before { content: \"\"; position: absolute; inset: 0; background: var(--signal, #ec2c92); clip-path: inset(0 calc(100% - var(--p, 30%)) 0 0 round 2px); transition: clip-path 0.6s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)); } .ds-track > i.now::after { content: \"\"; position: absolute; inset: 0; width: 40%; background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.55), transparent); animation: ds-sheen 1.8s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)) infinite; } @keyframes ds-sheen { from { transform: translateX(-120%); } to { transform: translateX(260%); } } .ds-telemetry { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font: 600 12.5px/1.3 var(--font-ui, \"Raleway\", \"Assistant\", system-ui, sans-serif); color: var(--text-2, #aba9b5); font-variant-numeric: tabular-nums lining-nums; } .ds-telemetry b { font: 600 15px/1 var(--font-display, \"Unbounded\", \"Assistant\", \"Raleway\", sans-serif); letter-spacing: -0.02em; color: var(--text, #f4f3f7); } .ds-flight:hover .ds-title { color: var(--text, #f4f3f7); } @media (prefers-reduced-motion: reduce) { .ds-track > i.now::after { display: none; } }"
+    },
+    {
+      "name": "Composer",
+      "kind": "input",
+      "refersTo": "composer",
+      "description": "Signature: the pill-shaped link bar with a chrome rim; its rim turns magenta on focus. Docked above the tab bar on phones.",
+      "html": "<form class=\"ds-composer\" onsubmit=\"return false\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71\"/><path d=\"M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71\"/></svg><label class=\"ds-sr\" for=\"ds-link\">Link to look up</label><input id=\"ds-link\" type=\"url\" dir=\"ltr\" placeholder=\"Paste a link\"><button class=\"ds-paste\" type=\"button\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect width=\"8\" height=\"4\" x=\"8\" y=\"2\" rx=\"1\"/><path d=\"M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2\"/></svg><span>Paste</span></button><button class=\"ds-go\" type=\"submit\" aria-label=\"Look up\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m5 12 7-7 7 7\"/><path d=\"M12 19V5\"/></svg></button></form>",
+      "css": ".ds-composer { display: flex; align-items: center; gap: 4px; max-width: 560px; padding: 5px; padding-inline-start: 14px; border-radius: var(--r-pill, 999px); background: linear-gradient(var(--bg-3, #1a1a20), var(--bg-3, #1a1a20)) padding-box, var(--rim, linear-gradient(120deg, rgb(255 255 255 / 0.6), rgb(255 255 255 / 0.1) 28%, rgb(255 255 255 / 0.42) 52%, rgb(255 255 255 / 0.07) 74%, rgb(255 255 255 / 0.32))) border-box; border: 1.5px solid transparent; box-shadow: var(--shadow-2, 0 2px 8px rgb(0 0 0 / 0.35), 0 26px 56px -24px rgb(0 0 0 / 0.85)); color: var(--text-3, #8b8995); transition: background 0.2s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)); } .ds-composer:focus-within { background: linear-gradient(var(--bg-3, #1a1a20), var(--bg-3, #1a1a20)) padding-box, linear-gradient(120deg, var(--signal, #ec2c92), #ff8cc6 50%, var(--signal, #ec2c92)) border-box; } .ds-composer input { flex: 1; min-width: 0; height: 44px; padding-inline: 8px; border: 0; background: transparent; outline: none; font: 500 15px/1 var(--font-ui, \"Raleway\", \"Assistant\", system-ui, sans-serif); color: var(--text, #f4f3f7); } .ds-composer input::placeholder { color: var(--text-3, #8b8995); } .ds-paste { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding-inline: 14px; border: 0; border-radius: var(--r-pill, 999px); background: transparent; color: var(--text-2, #aba9b5); font: 700 13px/1 var(--font-ui, \"Raleway\", \"Assistant\", system-ui, sans-serif); cursor: pointer; transition: background-color 0.18s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)), color 0.18s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)); } .ds-paste:hover { background: var(--bg-4, #24242c); color: var(--text, #f4f3f7); } .ds-go { display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: var(--r-pill, 999px); background: var(--signal-fill, #d41b7e); color: #fff; cursor: pointer; box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.22), 0 10px 22px -12px rgb(236 44 146 / 0.75); transition: background-color 0.18s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)), transform 0.12s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)); } .ds-go:hover { background: var(--signal-fill-hover, #db2084); } .ds-go:active { transform: translateY(1px); } .ds-paste:focus-visible, .ds-go:focus-visible { outline: 2px solid var(--signal, #ec2c92); outline-offset: 2px; } .ds-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }"
+    },
+    {
+      "name": "Sidebar Navigation",
+      "kind": "nav",
+      "refersTo": "nav-row",
+      "description": "Desktop navigation rows (from 1024px): rounded 12px rows, current row raised with a magenta icon and a Pink Readout count.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Sections\"><a href=\"#\" aria-current=\"page\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z\"/><path d=\"m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z\"/><path d=\"M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0\"/><path d=\"M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5\"/></svg><span>Launch</span></a><a href=\"#\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M22 12h-4l-3 9L9 3l-3 9H2\"/></svg><span>Jobs</span><span class=\"ds-badge\">3</span></a><a href=\"#\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z\"/><path d=\"m14 7 3 3\"/><path d=\"M5 6v4\"/><path d=\"M19 14v4\"/><path d=\"M10 2v2\"/><path d=\"M7 8H3\"/><path d=\"M21 16h-4\"/><path d=\"M11 3H9\"/></svg><span>Tools</span></a><a href=\"#\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m16 6 4 14\"/><path d=\"M12 6v14\"/><path d=\"M8 8v12\"/><path d=\"M4 4v16\"/></svg><span>Library</span></a></nav>",
+      "css": ".ds-nav { display: grid; gap: 2px; width: 228px; padding: 8px; background: var(--bg, #0a0a0d); } .ds-nav a { display: flex; align-items: center; gap: 12px; min-height: 42px; padding-inline: 12px; border-radius: var(--r, 12px); color: var(--text-2, #aba9b5); text-decoration: none; font: 650 14px/1 var(--font-ui, \"Raleway\", \"Assistant\", system-ui, sans-serif); transition: background-color 0.18s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)), color 0.18s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)); } .ds-nav a:hover { background: var(--bg-2, #121216); color: var(--text, #f4f3f7); } .ds-nav a:focus-visible { outline: 2px solid var(--signal, #ec2c92); outline-offset: 2px; } .ds-nav a[aria-current=\"page\"] { background: var(--bg-3, #1a1a20); color: var(--text, #f4f3f7); box-shadow: var(--shadow-1, 0 1px 2px rgb(0 0 0 / 0.4), 0 10px 24px -16px rgb(0 0 0 / 0.75)); } .ds-nav a[aria-current=\"page\"] svg { color: var(--signal, #ec2c92); } .ds-badge { margin-inline-start: auto; font: 700 11.5px/1 var(--font-ui, \"Raleway\", \"Assistant\", system-ui, sans-serif); color: var(--signal-ink, #f56aaf); font-variant-numeric: tabular-nums; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Mission Deck",
+    "overview": "OTW Studio is a mission deck for media. A pasted link becomes a payload the member inspects, launches from a thumb-reach composer and follows by its telemetry until it lands as a file. The world is graphite space: four near-black steps from Graphite Void (#0a0a0d) upward, lit by a single signal colour, OTW Design's hot magenta (#ec2c92), which marks only what is live, chosen or about to happen. Raised surfaces catch light along their top edge like brushed metal, and the two places where media enters (the composer and the upload dropzone) wear a chrome rim. OTW Design's own chrome astronaut helmet, keyed from their 512px logo, is the only illustration: it rides the magenta field and floats inside a drawn orbit on empty states.\n\nDensity is an instrument panel, not a dashboard. Lists run 14.5px titles over 12.5–13px meta. Numerals are tabular everywhere and set in the display face wherever they are readouts. Every job shows its state on a four-segment track (queued, fetch, process, ready) with percent, stage, speed and time left. Every error names what happened and sits beside the button that fixes it. The phone is the primary cockpit, with a glass top bar, a five-tab bar and the docked composer. From 1024px a sidebar takes over, and from 1280px the in-flight column stands beside the deck.\n\nThe confirmed anti-reference is the category default: a centred paste box on a white page with a giant download button. Dark is the default theme. The light theme swaps tokens and keeps the component grammar unchanged. English and Hebrew share one layout written in logical properties, so right-to-left is a mirror, not a variant.",
+    "keyCharacteristics": [
+      "Graphite tonal stack with light-catch gradient edges on raised surfaces; no flat grey card borders.",
+      "One signal colour, OTW magenta, for action, live work, selection and focus; one magenta field per screen.",
+      "Unbounded for titles and readouts, Raleway for the interface, Assistant leading in Hebrew, JetBrains Mono for logs and IDs.",
+      "Pills for everything pressed, 20px rounded panels, 16:9 media stills with 10px corners.",
+      "A four-segment telemetry track whose sheen moves only while work is happening.",
+      "Mobile first with a thumb-zone composer; logical properties throughout for RTL."
+    ],
+    "rules": [
+      {
+        "name": "The One Signal Rule",
+        "body": "Magenta means \"act, live, or chosen\". It marks the primary action, running and live work, the selected option and keyboard focus, and nothing decorative. Green, amber and ember appear only on status.",
+        "section": "colors"
+      },
+      {
+        "name": "The White-on-Fill Rule",
+        "body": "White text sits only on Pressed Magenta (#d41b7e, 4.93:1) or on the deep end of the magenta field. It never sits on the brand #ec2c92 (3.93:1) or the hot end #ff5fae (2.8:1).",
+        "section": "colors"
+      },
+      {
+        "name": "The One Field Rule",
+        "body": "The magenta gradient field appears once per screen: the greeting band on Launch, or the brand panel on sign-in. The helmet sits at its hot end and the text on its deep end. The hot spot follows the helmet to the inline end, so in Hebrew the gradient mirrors as well.",
+        "section": "colors"
+      },
+      {
+        "name": "The Instrument Numerals Rule",
+        "body": "Every measure (percent, speed, size, duration, clock) uses tabular lining numerals. Inside Hebrew it is isolated left to right, so \"6.1 MB/s\" and \"9:56\" never reorder. Titles from other sites are wrapped in `<bdi>`.",
+        "section": "typography"
+      },
+      {
+        "name": "The Display-Is-for-Readouts Rule",
+        "body": "Unbounded sets page titles, the wordmark and telemetry numbers only. Body, labels, buttons and list titles stay in Raleway.",
+        "section": "typography"
+      },
+      {
+        "name": "The Hebrew Weight Rule",
+        "body": "In Hebrew, Assistant leads. Display steps up to 800 with zero tracking, body grows to 16px, and status pills drop their uppercase tracking and grow to 12px.",
+        "section": "typography"
+      },
+      {
+        "name": "The Thumb Zone Rule",
+        "body": "On phones the link field and Launch live in the docked composer just above the tab bar. After a lookup the bar turns into New link · summary · Launch, and the payload card's own Launch button hides. Nothing the member needs to finish a job sits only at the top of a long screen.",
+        "section": "layout"
+      },
+      {
+        "name": "The Mirror-for-Free Rule",
+        "body": "Every inset, margin, padding, border side and corner uses inline and block logical properties. Physical left and right appear only on content that stays LTR (logs, URL and email fields), and on backgrounds positioned explicitly that carry an `[dir=\"rtl\"]` override. Directional icons (back, arrow, sign out) flip in RTL.",
+        "section": "layout"
+      },
+      {
+        "name": "The Light-Catch Rule",
+        "body": "Raised panels get a gradient edge that is brighter at the top, plus ambient low. They never get a flat grey border or a hard offset shadow.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Chrome Rim Rule",
+        "body": "Only the places where media enters, the composer and the dropzone, wear the chrome rim. When they have focus or are receiving a drop, the rim turns magenta (signal → Glow Pink → signal).",
+        "section": "elevation"
+      },
+      {
+        "name": "The Press-Is-a-Pill Rule",
+        "body": "Buttons, chips, segments, the composer and status pills are pills. Containers and navigation rows are rounded rectangles, so a current nav row reads as a place, not a button.",
+        "section": "shapes"
+      }
+    ],
+    "dos": [
+      "**Do** reserve OTW Magenta (#ec2c92) for the primary action, running and live work, selection and focus, and let graphite carry everything else.",
+      "**Do** put white text only on Pressed Magenta (#d41b7e) or on the deep end of the magenta field (#b8106a and darker).",
+      "**Do** show every job's state on the four-segment telemetry track, with percent, stage, speed and time left in tabular numerals.",
+      "**Do** pair every error with the action that fixes it: an ember sentence that names what happened, then a secondary fix button (\"Add cookies\", \"Add Vimeo login\") and a ghost Retry.",
+      "**Do** write layout in logical properties, flip directional icons in RTL, wrap titles from other sites in `<bdi>` and isolate measures left to right.",
+      "**Do** keep primary touch targets at least 44px tall (inputs 46px). Dense secondary controls may drop to 36px or 30px.",
+      "**Do** give raised panels the light-catch edge and ambient low, and give the composer and dropzone the chrome rim.",
+      "**Do** load the type families as variable weight ranges so the 450, 650 and 750 weights render as specified.",
+      "**Do** collapse all animation under reduced motion and remove the track sheen."
+    ],
+    "donts": [
+      "**Don't** use magenta as decoration, as a second large fill or as a card background; the field appears once per screen.",
+      "**Don't** put text on the hot end of the field (#ff5fae to #ec2c92), where white drops to 2.8–3.9:1, and don't leave the field's gradient position physical so that Hebrew text lands there.",
+      "**Don't** set body copy, labels, buttons or list titles in Unbounded.",
+      "**Don't** introduce a second progress style (bare bars, circular rings, spinners for running jobs); single-stage transfers use a one-segment track.",
+      "**Don't** give raised panels a flat grey border or a hard offset shadow.",
+      "**Don't** use uppercase tracked text anywhere except status pills and file-kind tags.",
+      "**Don't** use glyph or emoji icons; icons are drawn 1.75px line SVGs in `currentColor`.",
+      "**Don't** hard-code a white-alpha hover or tint without a light-theme counterpart; the theme swaps tokens, not components."
+    ]
+  }
+}

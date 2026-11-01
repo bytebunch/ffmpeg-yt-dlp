@@ -13,7 +13,8 @@ Milestones 1–10 of SPEC §18 are built and tested on the Mac, `ci.yml` is gree
 publishes the image, and the first install on the VPS succeeded. Latest totals: `pnpm check`
 729/729, Playwright 6/6, live YouTube tests 7/7, deploy tests 72 (60 Bats, 6 real-packet
 firewall, 6 nginx), ffmpeg image acceptance, e2e 68 checks. The installer was reviewed with the
-user point by point (see "Installer review" at the end).
+user point by point (see "Installer review" at the end). The OTW Studio web app design is
+approved (2026-11-02): a static prototype in `design/`, recorded in `PRODUCT.md` and `DESIGN.md`.
 
 ### Open items
 
@@ -1165,3 +1166,25 @@ nvidia runtime, which the installer kept).
   `api` at one fixed address, then the stand-in replaced at another; the proxy must reach the new
   one within 15 s. Passes in 8 s with the fix.
 - SPEC §17 (compose services) updated.
+
+## OTW Studio design (2026-11-02)
+
+The web app over this service, named OTW Studio by the user: invite only, English and Hebrew (RTL), mobile first,
+OTW Design's brand, to be built in Next.js. Design only; no API code changed.
+
+- `design/`: static HTML/CSS prototype of every screen (Launch, Jobs, Job detail, Tools, Library, Watches, Search,
+  Transcripts, Comments, Settings, sign-in), hash-routed, with sample data flagged in the UI. `design/README.md` maps
+  each screen to its API endpoints. Brand assets are OTW's own logo, keyed from the 512 px original on their site;
+  stills are Blender open-movie frames (CC BY) taken with ffmpeg.
+- Servers: each media server keeps its own database (bundled Postgres or Supabase). Admins add servers in Studio
+  (Settings → Servers): HTTPS origin plus a key from `cli keys:create otw-studio`, tested before saving, stored
+  encrypted by Studio (`STUDIO_ENCRYPTION_KEYS`), shown only as a prefix and never sent to the browser. Read-only
+  servers can be declared in `STUDIO_SERVERS`; Studio never writes its `.env`. Members pick a server in a switcher;
+  new work names its server; Jobs and Library can list all servers.
+- `PRODUCT.md` holds the product brief, `DESIGN.md` (+ `.impeccable/design.json`) the design system for the Next.js
+  build.
+- Tested: 28 captures at 390 px and 1440 px through headless Chrome (dark, light, Hebrew, the launch moment, every
+  server state); no console errors or horizontal overflow on any; the design detector reports advisory notes only.
+  An independent review pass returned "rebuild" on the first round (redrawn logo, Launch below the fold, contradictory
+  sample data, engine vocabulary); after two fix rounds every finding was resolved.
+
