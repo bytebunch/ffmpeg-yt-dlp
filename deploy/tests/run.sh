@@ -9,12 +9,15 @@ deploy_dir=$(cd "$(dirname "$0")/.." && pwd)
 # nginx configuration, with the bundled proxy's own image.
 "$deploy_dir/tests/nginx.sh"
 
+# The compose file as Docker Compose resolves it: routes out for the database, the CA mount.
+"$deploy_dir/tests/compose.sh"
+
 docker run --rm -v "$deploy_dir:/deploy:ro" ubuntu:24.04 bash -euo pipefail -c '
   apt-get update -qq >/dev/null
   DEBIAN_FRONTEND=noninteractive apt-get install -y -qq bats shellcheck openssl >/dev/null
   cd /deploy
   echo "--- shellcheck $(shellcheck --version | sed -n "s/^version: //p")"
-  shellcheck install.sh deploy.sh smoke.sh models.sh backup.sh canary.sh host/egress-firewall.sh tests/run.sh tests/nginx.sh tests/install.bats tests/models.bats tests/firewall.bats tests/backup.bats tests/canary.bats tests/stubs/* \
+  shellcheck install.sh deploy.sh smoke.sh models.sh backup.sh canary.sh host/egress-firewall.sh tests/run.sh tests/nginx.sh tests/compose.sh tests/install.bats tests/models.bats tests/firewall.bats tests/backup.bats tests/canary.bats tests/stubs/* \
     tests/fixtures/bundle/*.sh tests/fixtures/bundle/host/*.sh
   echo "OK"
   echo "--- bats $(bats --version)"

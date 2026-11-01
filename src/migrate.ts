@@ -1,6 +1,6 @@
 import { ConfigError, loadConfig } from './config/load-config';
 import { createPool } from './db/database';
-import { runMigrations } from './db/migrations';
+import { describeMigrationFailure, runMigrations } from './db/migrations';
 
 /** Entry point of the one-off `migrate` service: applies migrations, then exits. */
 async function main(): Promise<void> {
@@ -15,6 +15,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-  console.error(error instanceof ConfigError ? error.message : error);
+  console.error(error instanceof ConfigError ? error.message : describeMigrationFailure(error));
   process.exitCode = 1;
 });

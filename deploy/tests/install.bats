@@ -459,6 +459,84 @@ LISTEN 0 4096 [fd7a:115c:a1e0::782c:4a7e]%tailscale0:3000 [::]:* users:(("tailsc
   grep -q "Container media-api-1  Starting" /var/log/media-install.log
 }
 
+# --- outside database (SPEC §17a) ---------------------------------------------------------------
+
+OUTSIDE_DB='postgres://media:s3cret-pw@db.example.com:5432/media'
+
+@test "an outside DATABASE_URL replaces the bundled Postgres, verifies TLS and is checked before the firewall" {
+  first_install DATABASE_URL="$OUTSIDE_DB"
+  [[ $output == *"Checking the database at db.example.com"* ]]
+  env_file="$MEDIA/.env"
+  [ "$(get_env_var "$env_file" DATABASE_URL)" = "$OUTSIDE_DB" ]
+  [ "$(get_env_var "$env_file" COMPOSE_PROFILES)" = local-redis,proxy ]
+  [ "$(get_env_var "$env_file" DATABASE_SSL_MODE)" = verify-full ]
+  run get_env_var "$env_file" DATABASE_SSL_CA_FILE
+  [ "$status" -eq 1 ]
+  (( $(call_line "docker compose run --rm --no-deps migrate") < $(call_line "systemctl restart media-egress-firewall.service") ))
+  (( $(call_line "docker compose run --rm --no-deps migrate") < $(call_line "models.sh sync") ))
+}
+
+@test "the outside database's password reaches neither the terminal nor the log" {
+  first_install DATABASE_URL="$OUTSIDE_DB"
+  [[ $output != *s3cret-pw* ]]
+  run grep -c s3cret-pw /var/log/media-install.log
+  [ "$output" = 0 ]
+}
+
+@test "a database the server can't reach stops the install before the firewall, naming the host and the cause" {
+  run_installer MEDIA_DIR="$MEDIA" MEDIA_IMAGE=ghcr.io/acme/media-service DATABASE_URL="$OUTSIDE_DB" \
+    STUB_DB_ERROR='Migrations failed: getaddrinfo ENOTFOUND db.example.com'
+  [ "$status" -eq 1 ]
+  [[ $output == *"The database at db.example.com did not answer: Migrations failed: getaddrinfo ENOTFOUND db.example.com"* ]]
+  [[ $output == *"DATABASE_URL"* ]]
+  [[ $output != *s3cret-pw* ]]
+  run grep -c -e "systemctl restart media-egress-firewall.service" -e "docker compose up" "$CALLS_LOG"
+  [ "$output" = 0 ]
+}
+
+@test "DATABASE_SSL_CA_FILE is copied next to the stack and points at its /certs mount" {
+  printf -- '-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----\n' >"$BATS_TEST_TMPDIR/supabase-ca.crt"
+  first_install DATABASE_URL="$OUTSIDE_DB" DATABASE_SSL_CA_FILE="$BATS_TEST_TMPDIR/supabase-ca.crt"
+  cmp "$BATS_TEST_TMPDIR/supabase-ca.crt" "$MEDIA/certs/database-ca.pem"
+  [ "$(stat -c %a "$MEDIA/certs/database-ca.pem")" = 644 ]
+  [ "$(get_env_var "$MEDIA/.env" DATABASE_SSL_CA_FILE)" = /certs/database-ca.pem ]
+}
+
+@test "invalid outside-database settings stop the install before anything changes, without echoing the URL" {
+  run_installer MEDIA_DIR="$MEDIA" DATABASE_URL='mysql://user:pw-mysql@db.example.com/media'
+  [ "$status" -eq 1 ]
+  [[ $output == *"DATABASE_URL must be a postgres:// URL"* ]]
+  [[ $output != *pw-mysql* ]]
+  run_installer MEDIA_DIR="$MEDIA" DATABASE_URL="$OUTSIDE_DB" DATABASE_SSL_MODE=strict
+  [ "$status" -eq 1 ]
+  [[ $output == *"DATABASE_SSL_MODE must be disable, require, verify-ca or verify-full, not 'strict'."* ]]
+  run_installer MEDIA_DIR="$MEDIA" DATABASE_URL="$OUTSIDE_DB" DATABASE_SSL_CA_FILE=/nonexistent/ca.pem
+  [ "$status" -eq 1 ]
+  [[ $output == *"DATABASE_SSL_CA_FILE '/nonexistent/ca.pem' is not a readable file."* ]]
+  run_installer MEDIA_DIR="$MEDIA" DATABASE_SSL_MODE=require
+  [ "$status" -eq 1 ]
+  [[ $output == *"DATABASE_SSL_MODE is only used with an outside DATABASE_URL."* ]]
+  [ ! -s "$CALLS_LOG" ]
+  [ ! -e "$MEDIA" ]
+}
+
+@test "the bundled database is not checked early" {
+  first_install
+  run grep -c "docker compose run" "$CALLS_LOG"
+  [ "$output" = 0 ]
+  [ "$(get_env_var "$MEDIA/.env" COMPOSE_PROFILES)" = local-db,local-redis,proxy ]
+}
+
+@test "updates keep the outside database's settings and check it again" {
+  first_install DATABASE_URL="$OUTSIDE_DB"
+  : >"$CALLS_LOG"
+  run_installer MEDIA_DIR="$MEDIA" DATABASE_URL='postgres://other:pw@elsewhere.example.com/x'
+  [ "$status" -eq 0 ]
+  [[ $output == *"DATABASE_URL is only used on the first install"* ]]
+  [ "$(get_env_var "$MEDIA/.env" DATABASE_URL)" = "$OUTSIDE_DB" ]
+  grep -q "docker compose run --rm --no-deps migrate" "$CALLS_LOG"
+}
+
 @test "piped into bash, as in the curl one-liner, the script runs main" {
   run bash -c 'cat "$1" | env MEDIA_DIR="$2" MEDIA_IMAGE=ghcr.io/acme/media-service HTTP_PORT=abc bash' \
     _ "$INSTALL_SH" "$MEDIA"

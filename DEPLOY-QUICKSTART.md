@@ -54,7 +54,7 @@ curl -H "Authorization: Bearer <api key>" -H "Content-Type: application/json" \
 |---|---|---|
 | Address | `http://127.0.0.1:8085`, this server only, served by a bundled nginx container | `HTTP_BIND`, `HTTP_PORT`, `PUBLIC_BASE_URL` ("Opening it up") |
 | Version | Newest build of `main`; the exact git SHA is recorded | `MEDIA_VERSION=<git-sha>` |
-| Postgres, Redis | Bundled containers | `DATABASE_URL`, `REDIS_URL` (SPEC §17a) |
+| Postgres, Redis | Bundled containers | Postgres: `DATABASE_URL=…` on the install command, plus `DATABASE_SSL_CA_FILE=/path/ca.pem` for Supabase (SPEC §17a); Redis: `REDIS_URL` |
 | Files | `/srv/media/files` on the root disk, deleted after 7 days | `MEDIA_FILES_PATH=/mnt/media-files` for a separate volume |
 | Whisper models | `fast`, `balanced`, `accurate` + VAD (~920 MB) | `MODELS=fast` or `MODELS=none` |
 | Secrets | Generated on first install, stored in `/srv/media/.env` | — |
@@ -64,6 +64,18 @@ curl -H "Authorization: Bearer <api key>" -H "Content-Type: application/json" \
 | YouTube | No cookies or proxy | `DEPLOY.md` §2a |
 
 Overrides go on the same command, e.g. `… | sudo HTTP_PORT=9000 MODELS=fast bash`. After the install, edit `/srv/media/.env` and run `docker compose up -d` in `/srv/media`.
+
+### On an outside database (Supabase)
+
+Give the database on the install command. With Supabase, use the pooler's **session** address (port 5432) from Connect in the dashboard, and download its CA certificate (Database settings, SSL) to the server first:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/bytebunch/ffmpeg-yt-dlp/main/deploy/install.sh | sudo \
+  DATABASE_URL='postgres://postgres.<project-ref>:<password>@<pooler-host>:5432/postgres' \
+  DATABASE_SSL_CA_FILE=/root/prod-ca-2021.crt bash
+```
+
+Percent-encode special characters in the password. TLS is verified (`verify-full`) unless you pass `DATABASE_SSL_MODE`. The installer connects and applies the migrations before anything else; if that fails it stops and names the host and the reason. The bundled Postgres is not started. Details: SPEC §17a.
 
 ---
 
@@ -75,10 +87,11 @@ Overrides go on the same command, e.g. `… | sudo HTTP_PORT=9000 MODELS=fast ba
 4. Creates `/srv/media/{files,inbox,models,backups}` with the right owners.
 5. Writes `.env` with generated secrets. This only happens on the first run; later runs never touch `.env`.
 6. Checks that the ports it publishes are free: the API on `127.0.0.1:3000` (`API_PORT`) and the bundled nginx on `HTTP_BIND:HTTP_PORT`. If another program or another project's container holds one, it stops here, names it, and tells you which setting to change in `/srv/media/.env` before running the command again.
-7. Installs the egress firewall unit (§4.5).
-8. Downloads the whisper models and checks their SHA-256.
-9. Starts everything (`docker compose up -d`): migrations first, then the API, workers and bundled nginx. If Docker refuses, the error it printed is shown.
-10. Runs the smoke test, creates the first API key and prints the summary above.
+7. With an outside `DATABASE_URL`, connects to it and applies the migrations. A wrong URL, password or certificate stops the install here, naming the database host and the reason (never the URL itself).
+8. Installs the egress firewall unit (§4.5).
+9. Downloads the whisper models and checks their SHA-256.
+10. Starts everything (`docker compose up -d`): migrations first, then the API, workers and bundled nginx. If Docker refuses, the error it printed is shown.
+11. Runs the smoke test, creates the first API key and prints the summary above.
 
 Re-running the command is safe, and it is also how you update (below).
 

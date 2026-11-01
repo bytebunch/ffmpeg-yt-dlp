@@ -10,6 +10,11 @@ case $1 in
         echo " Container media-api-1  Starting" >&2
         if [[ -n ${STUB_COMPOSE_UP_ERROR:-} ]]; then echo "$STUB_COMPOSE_UP_ERROR" >&2; fi
         exit "${STUB_COMPOSE_UP_EXIT:-0}" ;;
+      run) # compose run --rm --no-deps migrate: the outside-database check. STUB_DB_ERROR fails it
+           # with that last line, as migrate prints its one-line failure.
+        echo " Container media-migrate-run  Creating" >&2
+        if [[ -n ${STUB_DB_ERROR:-} ]]; then echo "$STUB_DB_ERROR" >&2; exit 1; fi
+        echo "Migrations applied" ;;
       ps) echo api-container ;;
       exec) # compose exec -T api cli <command> <args...>
         case $6 in

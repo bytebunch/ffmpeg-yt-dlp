@@ -13,6 +13,8 @@ x-app: &app
   volumes:
     - ${MEDIA_FILES_PATH:-./files}:/data/files
     - ./inbox:/data/inbox:ro
+    # CA of an outside database (DATABASE_SSL_CA_FILE=/certs/...); install.sh copies it here.
+    - ./certs:/certs:ro
   restart: unless-stopped
   logging:
     driver: json-file
@@ -23,7 +25,8 @@ services:
     <<: *app
     command: ["node", "dist/migrate.js"]
     restart: "no"
-    networks: [backend]
+    # egress only to reach an outside database (SPEC §17a); backend has no route out.
+    networks: [backend, egress]
     depends_on:
       postgres: { condition: service_healthy, required: false }
 
@@ -63,6 +66,7 @@ services:
     volumes:
       - ${MEDIA_FILES_PATH:-./files}:/data/files
       - ./inbox:/data/inbox:ro
+      - ./certs:/certs:ro
       - ./models:/models:ro
     networks: [backend, egress]
     depends_on:

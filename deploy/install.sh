@@ -22,6 +22,12 @@
 #     HTTP_BIND         address the port is published on        127.0.0.1 (0.0.0.0: every interface)
 #     PUBLIC_BASE_URL   external base URL used in links         http://<HTTP_BIND>:<HTTP_PORT>
 #     MODELS            whisper models: all | fast | none       all
+#     DATABASE_URL      an outside Postgres (Supabase, managed, your own) instead of the bundled one;
+#                       it is checked before anything else starts
+#     DATABASE_MIGRATION_URL  separate migration role for it    DATABASE_URL
+#     DATABASE_SSL_MODE disable | require | verify-ca | verify-full   verify-full
+#     DATABASE_SSL_CA_FILE  CA that signed the database's certificate (Supabase: from its
+#                       dashboard); copied to $MEDIA_DIR/certs      the system's CAs
 #
 # What this script expects from the release it installs:
 #   image   label org.opencontainers.image.revision = git SHA; the deployment bundle at /app/deploy;
@@ -41,7 +47,9 @@ readonly API_HEALTH_TIMEOUT_SECONDS=180
 readonly LOG_FILE=/var/log/media-install.log
 readonly FIREWALL_BIN=/usr/local/sbin/media-egress-firewall
 readonly FIREWALL_UNIT=media-egress-firewall.service
-readonly FIRST_RUN_ONLY_SETTINGS=(MEDIA_FILES_PATH HTTP_PORT HTTP_BIND PUBLIC_BASE_URL MODELS)
+readonly FIRST_RUN_ONLY_SETTINGS=(MEDIA_FILES_PATH HTTP_PORT HTTP_BIND PUBLIC_BASE_URL MODELS
+  DATABASE_URL DATABASE_MIGRATION_URL DATABASE_SSL_MODE DATABASE_SSL_CA_FILE)
+readonly DATABASE_CA_IN_CONTAINER=/certs/database-ca.pem   # ./certs is mounted at /certs
 readonly DOCKER_DAEMON_JSON='{
   "log-driver": "json-file",
   "log-opts": { "max-size": "20m", "max-file": "5" },
@@ -96,9 +104,15 @@ apply_settings() {
     HTTP_BIND=${HTTP_BIND:-127.0.0.1}
     PUBLIC_BASE_URL=${PUBLIC_BASE_URL:-}
     MODELS=${MODELS:-all}
+    DATABASE_URL=${DATABASE_URL:-}
+    DATABASE_MIGRATION_URL=${DATABASE_MIGRATION_URL:-}
+    DATABASE_SSL_MODE=${DATABASE_SSL_MODE:-}
+    DATABASE_SSL_CA_FILE=${DATABASE_SSL_CA_FILE:-}
     return 0
   fi
   warn_first_run_only_settings
+  # the database settings live in .env from now on
+  DATABASE_URL='' DATABASE_MIGRATION_URL='' DATABASE_SSL_MODE='' DATABASE_SSL_CA_FILE=''
   MEDIA_IMAGE=${MEDIA_IMAGE:-$(env_value MEDIA_IMAGE "$DEFAULT_IMAGE")}
   MEDIA_FILES_PATH=$(env_value MEDIA_FILES_PATH "$MEDIA_DIR/files")
   HTTP_PORT=$(env_value HTTP_PORT 8085)
@@ -134,6 +148,32 @@ validate_settings() {
   [[ $MODELS =~ ^(all|fast|none)$ ]] || die "MODELS must be all, fast or none, not '$MODELS'."
   [[ -z $PUBLIC_BASE_URL || $PUBLIC_BASE_URL =~ ^https?://[A-Za-z0-9.-]+(:[0-9]+)?$ ]] \
     || die "PUBLIC_BASE_URL must look like https://dl.example.com (no path), not '$PUBLIC_BASE_URL'."
+  validate_database_settings
+}
+
+# The URLs hold a password, so messages never repeat them.
+validate_database_settings() {
+  local name
+  if [[ -z ${DATABASE_URL:-} ]]; then
+    for name in DATABASE_MIGRATION_URL DATABASE_SSL_MODE DATABASE_SSL_CA_FILE; do
+      [[ -z ${!name:-} ]] || die "$name is only used with an outside DATABASE_URL."
+    done
+    return 0
+  fi
+  is_postgres_url "$DATABASE_URL" \
+    || die "DATABASE_URL must be a postgres:// URL such as postgres://user:password@db.example.com:5432/media (not shown here: it holds a password)."
+  [[ -z $DATABASE_MIGRATION_URL ]] || is_postgres_url "$DATABASE_MIGRATION_URL" \
+    || die "DATABASE_MIGRATION_URL must be a postgres:// URL like DATABASE_URL."
+  [[ -z $DATABASE_SSL_MODE || $DATABASE_SSL_MODE =~ ^(disable|require|verify-ca|verify-full)$ ]] \
+    || die "DATABASE_SSL_MODE must be disable, require, verify-ca or verify-full, not '$DATABASE_SSL_MODE'."
+  [[ -z $DATABASE_SSL_CA_FILE || ( -f $DATABASE_SSL_CA_FILE && -r $DATABASE_SSL_CA_FILE ) ]] \
+    || die "DATABASE_SSL_CA_FILE '$DATABASE_SSL_CA_FILE' is not a readable file."
+}
+
+is_postgres_url() { [[ $1 =~ ^postgres(ql)?://[^[:space:]]+$ && -n $(database_host "$1") ]]; }
+
+database_host() {  # <postgres URL>: its host, without user, password, port or database name
+  [[ $1 =~ ^postgres(ql)?://([^@/]*@)?(\[[0-9A-Fa-f:.]+\]|[^/:?@]+) ]] && printf '%s\n' "${BASH_REMATCH[3]}"
 }
 
 is_absolute_path() { [[ $1 =~ ^/[A-Za-z0-9._/-]+$ && $1 != *..* ]]; }
@@ -242,9 +282,13 @@ install_egress_firewall() {
 }
 
 create_dirs() {
-  mkdir -p "$MEDIA_DIR/inbox" "$MEDIA_DIR/models" "$MEDIA_DIR/backups" "$MEDIA_FILES_PATH"
+  mkdir -p "$MEDIA_DIR/inbox" "$MEDIA_DIR/models" "$MEDIA_DIR/backups" "$MEDIA_DIR/certs" "$MEDIA_FILES_PATH"
   chown "$APP_UID:$APP_UID" "$MEDIA_FILES_PATH" "$MEDIA_DIR/backups"
-  chmod 755 "$MEDIA_DIR" "$MEDIA_DIR/inbox" "$MEDIA_DIR/models" "$MEDIA_DIR/backups" "$MEDIA_FILES_PATH"
+  chmod 755 "$MEDIA_DIR" "$MEDIA_DIR/inbox" "$MEDIA_DIR/models" "$MEDIA_DIR/backups" "$MEDIA_DIR/certs" "$MEDIA_FILES_PATH"
+}
+
+install_database_ca() {  # the containers read it from the read-only /certs mount
+  install -m 0644 "$DATABASE_SSL_CA_FILE" "$MEDIA_DIR/certs/database-ca.pem"
 }
 
 # ---------------------------------------------------------------------------------------------
@@ -385,19 +429,25 @@ public_base_url() {
 
 write_initial_env() {
   local public_url pg_password link_secret encryption_key whisper line
+  local profiles=local-db,local-redis,proxy database_url
   local -a names
   log "Writing $ENV_FILE with generated secrets"
   public_url=$(public_base_url)
   pg_password=$(openssl rand -hex 24)              # hex: it goes inside DATABASE_URL
   link_secret=$(openssl rand -base64 32)
   encryption_key=$(openssl rand -base64 32)
+  database_url="postgres://ytdlp_app:$pg_password@postgres:5432/media"
+  if [[ -n $DATABASE_URL ]]; then
+    profiles=local-redis,proxy
+    database_url=$DATABASE_URL
+  fi
   read -ra names <<<"$(model_names "$MODELS")"
   whisper=$("$MEDIA_DIR/models.sh" env "${names[@]}")
 
   install -m 0600 "$MEDIA_DIR/.env.example" "$ENV_FILE"
   set_env_vars "$ENV_FILE" \
     COMPOSE_PROJECT_NAME media \
-    COMPOSE_PROFILES local-db,local-redis,proxy \
+    COMPOSE_PROFILES "$profiles" \
     MEDIA_FILES_PATH "$MEDIA_FILES_PATH" \
     HTTP_PORT "$HTTP_PORT" \
     HTTP_BIND "$HTTP_BIND" \
@@ -405,18 +455,54 @@ write_initial_env() {
     POSTGRES_USER ytdlp_app \
     POSTGRES_DB media \
     POSTGRES_PASSWORD "$pg_password" \
-    DATABASE_URL "postgres://ytdlp_app:$pg_password@postgres:5432/media" \
+    DATABASE_URL "$database_url" \
     REDIS_URL redis://redis:6379 \
     LINK_SIGNING_SECRET "$link_secret" \
     TOKEN_ENCRYPTION_KEYS "v1:$encryption_key"
   while IFS= read -r line; do
     if [[ -n $line ]]; then set_env_var "$ENV_FILE" "${line%%=*}" "${line#*=}"; fi
   done <<<"$whisper"
+  if [[ -n $DATABASE_URL ]]; then write_database_env; fi
+}
+
+# An outside database keeps the generated POSTGRES_* values too: compose resolves the bundled
+# postgres service's variables even when its profile is off, and fails without them.
+write_database_env() {
+  set_env_var "$ENV_FILE" DATABASE_SSL_MODE "${DATABASE_SSL_MODE:-verify-full}"
+  if [[ -n $DATABASE_MIGRATION_URL ]]; then
+    set_env_var "$ENV_FILE" DATABASE_MIGRATION_URL "$DATABASE_MIGRATION_URL"
+  fi
+  if [[ -n $DATABASE_SSL_CA_FILE ]]; then
+    set_env_var "$ENV_FILE" DATABASE_SSL_CA_FILE "$DATABASE_CA_IN_CONTAINER"
+  fi
 }
 
 prepare_models() {
   log "Downloading the whisper models listed in .env (about 1 GB on a first install)"
   "$MEDIA_DIR/models.sh" sync "$ENV_FILE"
+}
+
+# ---------------------------------------------------------------------------------------------
+# Outside database
+
+# Runs before the firewall and the model download, so a wrong DATABASE_URL fails in seconds. The
+# one-off migrate container connects with the stack's own settings and applies the migrations;
+# its last line names the cause when it cannot.
+check_database() {
+  local host output status=0
+  host=$(outside_database_host) || return 0
+  log "Checking the database at $host (and applying migrations)"
+  output=$(compose run --rm --no-deps migrate 2>&1) || status=$?
+  printf '%s\n' "$output"
+  if (( status == 0 )); then return 0; fi
+  die "The database at $host did not answer: $(awk 'NF { line = $0 } END { print line }' <<<"$output")
+     Check DATABASE_URL and DATABASE_SSL_* in $ENV_FILE, then run the installer again. Supabase: use the pooler's session address (port 5432); its CA certificate goes in $MEDIA_DIR/certs/database-ca.pem with DATABASE_SSL_CA_FILE=$DATABASE_CA_IN_CONTAINER."
+}
+
+outside_database_host() {  # the host of DATABASE_URL in .env, unless it is the bundled postgres
+  local host
+  host=$(database_host "$(env_value DATABASE_URL "")") || return 1
+  [[ $host != postgres ]] && printf '%s\n' "$host"
 }
 
 # ---------------------------------------------------------------------------------------------
@@ -589,10 +675,12 @@ main() {
   pull_image
   extract_bundle
   create_dirs
+  if (( FIRST_RUN )) && [[ -n $DATABASE_SSL_CA_FILE ]]; then install_database_ca; fi
   if (( FIRST_RUN )); then write_initial_env; fi
   set_env_vars "$ENV_FILE" MEDIA_IMAGE "$MEDIA_IMAGE" IMAGE_TAG "$RELEASE"
 
   check_ports
+  check_database
   install_egress_firewall
   prepare_models
   start_stack

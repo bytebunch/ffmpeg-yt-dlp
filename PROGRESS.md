@@ -11,8 +11,8 @@ Commits only on request. The code is at `github.com/bytebunch/ffmpeg-yt-dlp` (pu
 
 Milestones 1–10 of SPEC §18 are built and tested on the Mac, `ci.yml` is green on GitHub and
 publishes the image, and the first install on the VPS succeeded. Latest totals: `pnpm check`
-729/729, Playwright 6/6, live YouTube tests 7/7, deploy tests 72 (60 Bats, 6 real-packet
-firewall, 6 nginx), ffmpeg image acceptance, e2e 68 checks. The installer was reviewed with the
+734/734, Playwright 6/6, live YouTube tests 7/7, deploy tests 88 (67 Bats, 6 real-packet
+firewall, 6 nginx, 9 compose), ffmpeg image acceptance, e2e 68 checks. The installer was reviewed with the
 user point by point (see "Installer review" at the end). The OTW Studio web app design is
 approved (2026-11-02): a static prototype in `design/`, recorded in `PRODUCT.md` and `DESIGN.md`.
 
@@ -101,6 +101,7 @@ approved (2026-11-02): a static prototype in `design/`, recorded in `PRODUCT.md`
 | D57 | The daily canary runs only on the server (`canary.sh`); `canary.yml` runs by hand | User's decision: from a runner IP it can only report the block, and it costs Actions minutes daily. In SPEC §17 |
 | D58 | `install.sh` checks its published ports before the firewall and models and stops with who holds them and the `.env` key to change; it never picks another port itself | Found on the first VPS install (another stack on `127.0.0.1:3000`). `API_PORT` is also the upstream of a host nginx (`nginx/media.conf`), so a silently chosen port would surprise. Approved by the user. In SPEC §17 |
 | D59 | The bundled proxy looks `api` up again in Docker's DNS (`server api:… resolve`, `resolver 127.0.0.11 valid=5s`) instead of once at start | Found on the VPS: an `.env` change recreated `api` with a new address, compose left the proxy running, and every request got 502 until `docker compose restart proxy`. Updates recreate `api` the same way. Approved by the user. In SPEC §17 |
+| D60 | `install.sh` installs onto an outside Postgres when `DATABASE_URL` is given (no `local-db`, `verify-full` by default, CA copied to `certs/` and mounted at `/certs`) and checks it by running `migrate` before the firewall and the models; `migrate` joins the egress network | User's decision: each media server keeps its own database, bundled or Supabase. `migrate` was on the internal network only, so every install or update against an outside database failed. Approved by the user. In SPEC §17a |
 
 ## Steps
 
@@ -1187,4 +1188,35 @@ OTW Design's brand, to be built in Next.js. Design only; no API code changed.
   server state); no console errors or horizontal overflow on any; the design detector reports advisory notes only.
   An independent review pass returned "rebuild" on the first round (redrawn logo, Launch below the fold, contradictory
   sample data, engine vocabulary); after two fix rounds every finding was resolved.
+
+## Outside databases (D60, 2026-11-02) ✅
+
+Each media server keeps its own database, bundled Postgres or Supabase (user's decision).
+
+- Found while checking this: `migrate` was attached to the internal `backend` network only, so it could
+  never reach an outside database; the API and workers could. It now also joins `egress`.
+  `DATABASE_SSL_CA_FILE` is read inside the containers, but nothing mounted a CA into them; the app
+  services now mount `./certs` read-only at `/certs`.
+- `install.sh`: `DATABASE_URL` (plus `DATABASE_MIGRATION_URL`, `DATABASE_SSL_MODE`, default
+  `verify-full`, and `DATABASE_SSL_CA_FILE`) on the first install starts the stack without `local-db`
+  and copies the CA to `certs/database-ca.pem`. On every run with an outside database it runs
+  `compose run --rm --no-deps migrate` after the port check and before the firewall and the model
+  download, and stops with the host and `migrate`'s last line. Messages never repeat the URL. The
+  generated `POSTGRES_*` values stay: compose resolves the bundled service's variables even with its
+  profile off (confirmed with `docker compose config`).
+- `migrate` now prints one line on failure: `Migrations failed: <first line> (<SQLSTATE>)`, the first
+  inner error for Node's message-less AggregateError.
+- Tests, written first and failing on the old code: 5 unit tests for the message; 7 Bats tests (outside
+  URL replaces the bundled DB and is checked before the firewall, the password never reaches the
+  terminal or log, an unreachable DB stops before the firewall, the CA copy, invalid settings, no check
+  for the bundled DB, updates keep and recheck it); `deploy/tests/compose.sh` (new, in `run.sh`) checks
+  the resolved compose file: every database client has a route out and the app services mount
+  `/certs`. It caught `worker-ff`'s own volume list missing the mount.
+- Real chain, once on the Mac: a Postgres with TLS from a throwaway CA, the repo's compose file and the
+  new image. `migrate` with `verify-full` and the CA from `/certs` applied the migrations (18 tables);
+  a CA that did not sign the certificate, a wrong password and a closed port each ended in one line
+  ("unable to verify the first certificate", "password authentication failed … (28P01)",
+  "connect ECONNREFUSED …").
+- Docs: SPEC §17 and §17a, DEPLOY-QUICKSTART (Supabase command, installer steps), `.env.example`.
+- Not changed: the nightly `pg_dump` uses `DATABASE_URL` as given (libpq `prefer`: encrypted, not verified).
 
