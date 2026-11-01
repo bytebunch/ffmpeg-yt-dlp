@@ -4,24 +4,25 @@ Work log for the media service, newest step last. Each step lists what was built
 (with results), and any decision or deviation from SPEC.md worth reviewing. Commands run inside the
 toolbox container: `./dev pnpm check` (format, lint, types, all tests) unless noted.
 
-Nothing is committed to git (standing rule: commits only on request). The project is not yet a git
-repository.
+Commits only on request. The code is at `github.com/bytebunch/ffmpeg-yt-dlp` (public), the image at
+`ghcr.io/bytebunch/media-service` (public).
 
-## Status (2026-10-31)
+## Status (2026-11-01)
 
-Milestones 1–10 of SPEC §18 are built and tested on the Mac. Latest totals: `pnpm check` 729/729,
-Playwright 6/6, live YouTube tests 7/7, deploy tests 64 (53 Bats, 6 real-packet firewall, 5 nginx),
-ffmpeg image acceptance, e2e 68 checks. The installer was then reviewed with the user point by
-point (see "Installer review" at the end).
+Milestones 1–10 of SPEC §18 are built and tested on the Mac, `ci.yml` is green on GitHub and
+publishes the image, and the first install on the VPS succeeded. Latest totals: `pnpm check`
+729/729, Playwright 6/6, live YouTube tests 7/7, deploy tests 71 (60 Bats, 6 real-packet
+firewall, 5 nginx), ffmpeg image acceptance, e2e 68 checks. The installer was reviewed with the
+user point by point (see "Installer review" at the end).
 
 ### Open items
 
-1. **On the VPS (Ubuntu 26.04):** `install.sh` end to end, the egress firewall unit at boot and the
-   DEPLOY.md §4.5 checks from inside `worker-dl`, host nginx + certbot, GHCR pulls with a
-   `read:packages` token, Google OAuth with the real client (consent screen in production), the
-   first backup restore drill, the server canary cron.
-2. **On GitHub:** the first runs of `ci.yml`, `rebuild.yml` and `canary.yml` (only linted with
-   actionlint so far).
+1. **On the VPS (Ubuntu 26.04):** `install.sh` ran end to end (2026-11-01, public image, no
+   token). Still to check: the egress firewall unit at boot and the DEPLOY.md §4.5 checks from
+   inside `worker-dl`, host nginx + certbot, Google OAuth with the real client (consent screen in
+   production), the first backup restore drill, the server canary cron.
+2. **On GitHub:** `ci.yml` is green (run 41246822634); the first runs of `rebuild.yml` and
+   `canary.yml` are still to do.
 3. ffmpeg's TLS does not verify certificates by default (D45); pass `-tls_verify 1 -ca_file …`
    through `--downloader-args ffmpeg_i:` once it is confirmed to reach HLS segment requests.
 4. Twice a whole integration file failed in `beforeAll` during a full run (milestone 8); not seen
@@ -97,6 +98,7 @@ point (see "Installer review" at the end).
 | D55 | The bundled nginx defaults to `127.0.0.1:8085` (was `0.0.0.0:8080`); the installer no longer looks up the server's IP | User's decision: nothing is reachable from other machines until the developer opens it, through `HTTP_BIND` in `.env` or their own nginx in front. In SPEC §17 |
 | D56 | On CI (`ci.yml`, `rebuild.yml`) a YouTube `BOT_CHECK` answer skips the e2e's YouTube checks (`E2E_ALLOW_YOUTUBE_BLOCK=1`), with a warning on the run; any other failure still fails | User's decision: GitHub runners' IPs are refused by YouTube, which blocked every image push. YouTube is proven where the IP matters: the Mac e2e, the installer's smoke test and the server canary. In SPEC §17 |
 | D57 | The daily canary runs only on the server (`canary.sh`); `canary.yml` runs by hand | User's decision: from a runner IP it can only report the block, and it costs Actions minutes daily. In SPEC §17 |
+| D58 | `install.sh` checks its published ports before the firewall and models and stops with who holds them and the `.env` key to change; it never picks another port itself | Found on the first VPS install (another stack on `127.0.0.1:3000`). `API_PORT` is also the upstream of a host nginx (`nginx/media.conf`), so a silently chosen port would surprise. Approved by the user. In SPEC §17 |
 
 ## Steps
 
@@ -1115,3 +1117,35 @@ changes were made.
   `JobFinisher.announce` (called right after the finishing commit) and records whether the work
   directory still existed; with the old executor it did for a recipe and for `concat_items`.
 - **Totals: `pnpm check` 729/729; `process.spec` 10/10 runs; e2e 68/68.**
+
+## First install on the VPS (2026-11-01)
+
+The repository and the `media-service` package were made public, so the one-line install runs
+without `GH_TOKEN`. The server already runs another Docker stack (its own `daemon.json` with the
+nvidia runtime, which the installer kept).
+
+### A taken port: checked before anything starts (D58) ✅
+- The first run stopped at `docker compose up`: another stack's container held
+  `127.0.0.1:3000`, so `api` could not publish `API_PORT` and the proxy never started. The
+  installer pointed at `docker compose logs migrate api`, which showed only "Migrations applied";
+  Docker's real error was in `/var/log/media-install.log`. Fixed on the server with
+  `API_PORT=3001` in `.env` and a re-run.
+- `install.sh` now runs `check_ports` after `.env` is written and before the firewall and the
+  model download: `API_PORT` on `127.0.0.1`, and `HTTP_BIND:HTTP_PORT` when the `proxy` profile
+  is on. A port held by the stack's own containers (compose project label) is fine on updates.
+  Otherwise `ss -Hltnp` decides, with the kernel's bind rules (same address, `0.0.0.0` or the
+  dual-stack `*`; an IPv6-only `[::]` does not collide; `0.0.0.0` collides with every IPv4
+  listener), all confirmed with real sockets first. The message names the container
+  (`docker-proxy` listeners are looked up with `docker ps --filter publish=`) or the program, and
+  the `.env` key to change. `ss` joins `curl openssl ip` in the base-package check (iproute2).
+- When `compose up` still fails, the terminal now gets Docker's own last line (e.g. "Bind for
+  127.0.0.1:3000 failed: port is already allocated") and where to look per service.
+- 7 new Bats tests, written first and failing on the old script: the bind rules, naming the
+  listener from the server's real `ss` output (Tailscale on its own addresses is no collision),
+  the whole first-install failure and the `API_PORT` fix, the proxy port on `HTTP_BIND` and
+  skipped without the `proxy` profile, the stack's own ports on an update (also run against a copy
+  without the ownership check, where it fails), an invalid `API_PORT`, and Docker's error on a
+  failed `compose up`. New `ss` stub; the `docker` stub answers `ps`.
+- DEPLOY-QUICKSTART.md ("What the installer does") and SPEC §17 updated.
+- **Totals: deploy 71 (60 Bats + 6 real-packet firewall + 5 nginx checks), shellcheck clean.**
+

@@ -74,10 +74,11 @@ Overrides go on the same command, e.g. `… | sudo HTTP_PORT=9000 MODELS=fast ba
 3. Pulls the image and copies the deployment files out of it into `/srv/media` (compose file, nginx config, scripts), so the files always match the image version.
 4. Creates `/srv/media/{files,inbox,models,backups}` with the right owners.
 5. Writes `.env` with generated secrets. This only happens on the first run; later runs never touch `.env`.
-6. Installs the egress firewall unit (§4.5).
-7. Downloads the whisper models and checks their SHA-256.
-8. Starts everything (`docker compose up -d`): migrations first, then the API, workers and bundled nginx.
-9. Runs the smoke test, creates the first API key and prints the summary above.
+6. Checks that the ports it publishes are free: the API on `127.0.0.1:3000` (`API_PORT`) and the bundled nginx on `HTTP_BIND:HTTP_PORT`. If another program or another project's container holds one, it stops here, names it, and tells you which setting to change in `/srv/media/.env` before running the command again.
+7. Installs the egress firewall unit (§4.5).
+8. Downloads the whisper models and checks their SHA-256.
+9. Starts everything (`docker compose up -d`): migrations first, then the API, workers and bundled nginx. If Docker refuses, the error it printed is shown.
+10. Runs the smoke test, creates the first API key and prints the summary above.
 
 Re-running the command is safe, and it is also how you update (below).
 

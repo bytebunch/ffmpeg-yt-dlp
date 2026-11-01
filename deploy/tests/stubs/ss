@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Test double for `ss -Hltnp "sport = :<port>"`: prints the lines of STUB_LISTENERS (ss's own
+# output format, one listener per line) whose local address is on that port.
+set -euo pipefail
+printf 'ss %s\n' "$*" >>"$CALLS_LOG"
+args=$*
+port=${args##*:}
+while IFS= read -r line; do
+  [[ -n $line ]] || continue
+  read -r _ _ _ address _ <<<"$line"
+  if [[ ${address##*:} == "$port" ]]; then printf '%s\n' "$line"; fi
+done <<<"${STUB_LISTENERS:-}"

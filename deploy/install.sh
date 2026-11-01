@@ -190,7 +190,7 @@ apt_get() { DEBIAN_FRONTEND=noninteractive apt-get -o DPkg::Lock::Timeout=300 -y
 install_base_packages() {
   local cmd
   local -a missing=()
-  for cmd in curl openssl ip; do command -v "$cmd" >/dev/null || missing+=("$cmd"); done
+  for cmd in curl openssl ip ss; do command -v "$cmd" >/dev/null || missing+=("$cmd"); done
   if (( ${#missing[@]} == 0 )); then return 0; fi
   log "Installing base packages"
   apt_get update
@@ -420,16 +420,72 @@ prepare_models() {
 }
 
 # ---------------------------------------------------------------------------------------------
+# Ports
+
+# Runs before the firewall and the model download, so a taken port fails in seconds and names
+# the setting to change. The API is published on localhost, the bundled proxy on HTTP_BIND.
+check_ports() {
+  local api_port
+  api_port=$(env_value API_PORT 3000)
+  is_port "$api_port" || die "API_PORT in $ENV_FILE must be a port number (1-65535), not '$api_port'."
+  require_free_port 127.0.0.1 "$api_port" API_PORT
+  if [[ ,$(env_value COMPOSE_PROFILES ""), == *,proxy,* ]]; then
+    require_free_port "$HTTP_BIND" "$HTTP_PORT" HTTP_PORT
+  fi
+}
+
+require_free_port() {  # <bind address> <port> <.env key>
+  local project users
+  # On updates the stack's own containers hold its ports; compose recreates them.
+  project=$(env_value COMPOSE_PROJECT_NAME media)
+  if [[ -n $(docker ps -q --filter "label=com.docker.compose.project=$project" --filter "publish=$2") ]]; then
+    return 0
+  fi
+  users=$(port_users "$1" "$2")
+  if [[ -n $users ]]; then
+    die "Port $1:$2 ($3) is already in use by $users. Set $3 in $ENV_FILE to a free port, then run the installer again."
+  fi
+}
+
+port_users() {  # <bind address> <port>: who listens where binding there would fail, or nothing
+  local address process user list=""
+  while read -r address process; do
+    port_conflicts "$1" "$address" || continue
+    user=$(sed -n 's/^users:(("\([^"]*\)".*/\1/p' <<<"$process")
+    if [[ $user == docker-proxy ]]; then
+      user="container $(docker ps --filter "publish=$2" --format '{{.Names}}' | paste -sd, -)"
+    fi
+    user=${user:-another program}
+    if [[ ", $list, " != *", $user, "* ]]; then list+=${list:+, }$user; fi
+  done < <(ss -Hltnp "sport = :$2" | awk '{ a = $4; sub(/:[0-9]+$/, "", a); sub(/%.*$/, "", a); print a, (NF >= 6 ? $6 : "") }')
+  if [[ -n $list ]]; then printf '%s\n' "$list"; fi
+}
+
+# Linux refuses the bind when the listener has the same address or a wildcard one ("*" is a
+# dual-stack socket; "[::]" is IPv6-only and does not collide), and 0.0.0.0 collides with every
+# IPv4 listener.
+port_conflicts() {  # <IPv4 bind address> <listener address as ss prints it, without the port>
+  case $2 in 0.0.0.0 | '*' | "$1") return 0 ;; esac
+  [[ $1 == 0.0.0.0 && $2 != \[* ]]
+}
+
+# ---------------------------------------------------------------------------------------------
 # Stack
 
 compose() { (cd "$MEDIA_DIR" && docker compose "$@"); }
 
 api_cli() { compose exec -T api cli "$@"; }
 
+# Compose ends its output with the error, such as "Bind for 127.0.0.1:3000 failed: port is already
+# allocated"; the terminal gets that line, the log gets everything.
 start_stack() {
+  local output status=0
   log "Starting the services (database migrations run first)"
-  compose up -d --pull missing --remove-orphans \
-    || die "The services did not start. Details: cd $MEDIA_DIR && docker compose logs migrate api"
+  output=$(compose up -d --pull missing --remove-orphans 2>&1) || status=$?
+  printf '%s\n' "$output"
+  if (( status == 0 )); then return 0; fi
+  die "The services did not start: $(awk 'NF { line = $0 } END { print line }' <<<"$output")
+       Details: $LOG_FILE; per service: cd $MEDIA_DIR && docker compose ps -a, then docker compose logs <service>"
 }
 
 wait_for_api() {
@@ -536,6 +592,7 @@ main() {
   if (( FIRST_RUN )); then write_initial_env; fi
   set_env_vars "$ENV_FILE" MEDIA_IMAGE "$MEDIA_IMAGE" IMAGE_TAG "$RELEASE"
 
+  check_ports
   install_egress_firewall
   prepare_models
   start_stack

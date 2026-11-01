@@ -6,7 +6,10 @@ case $1 in
   compose)
     case $2 in
       version) ;;
-      up) exit "${STUB_COMPOSE_UP_EXIT:-0}" ;;
+      up) # Progress first, the error last, both on stderr, as compose prints them.
+        echo " Container media-api-1  Starting" >&2
+        if [[ -n ${STUB_COMPOSE_UP_ERROR:-} ]]; then echo "$STUB_COMPOSE_UP_ERROR" >&2; fi
+        exit "${STUB_COMPOSE_UP_EXIT:-0}" ;;
       ps) echo api-container ;;
       exec) # compose exec -T api cli <command> <args...>
         case $6 in
@@ -19,6 +22,19 @@ case $1 in
   login)
     read -r password
     printf 'docker login received %s bytes on stdin\n' "${#password}" >>"$CALLS_LOG" ;;
+  ps) # ps -q --filter label=com.docker.compose.project=<name> --filter publish=<port>: the stack's
+      # own containers on that port (STUB_OWN_PORTS); ps --filter publish=<port> --format ...:
+      # every container publishing it (STUB_PUBLISHERS, "<port>=<name> ...").
+    args=$*
+    port=${args##*publish=}
+    port=${port%% *}
+    if [[ $* == *label=com.docker.compose.project=* ]]; then
+      if [[ " ${STUB_OWN_PORTS:-} " == *" $port "* ]]; then echo own-container; fi
+    else
+      for publisher in ${STUB_PUBLISHERS:-}; do
+        if [[ ${publisher%%=*} == "$port" ]]; then echo "${publisher#*=}"; fi
+      done
+    fi ;;
   image) echo "$STUB_REVISION" ;;
   create) echo bundle-container ;;
   cp) cp -R "$FIXTURE_BUNDLE/." "$3" ;;

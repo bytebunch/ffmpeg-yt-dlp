@@ -239,6 +239,35 @@ call_line() {  # <pattern>: line number of the first recorded call matching patt
   grep -q "10.1.2.3 is private" "$BATS_TEST_TMPDIR/err"
 }
 
+# --- ports --------------------------------------------------------------------------------------
+
+# ss output from a real server: another stack's container holds 127.0.0.1:3000, and Tailscale
+# listens on port 3000 of its own addresses.
+AI_SERVER_LISTENERS='LISTEN 0 4096 127.0.0.1:3000 0.0.0.0:* users:(("docker-proxy",pid=791142,fd=7))
+LISTEN 0 4096 100.69.74.125%tailscale0:3000 0.0.0.0:* users:(("tailscaled",pid=571929,fd=26))
+LISTEN 0 4096 [fd7a:115c:a1e0::782c:4a7e]%tailscale0:3000 [::]:* users:(("tailscaled",pid=571929,fd=22))'
+
+@test "port_conflicts follows the kernel's bind rules for an IPv4 address" {
+  port_conflicts 127.0.0.1 127.0.0.1
+  port_conflicts 127.0.0.1 0.0.0.0
+  port_conflicts 127.0.0.1 '*'
+  port_conflicts 0.0.0.0 0.0.0.0
+  port_conflicts 0.0.0.0 100.69.74.125
+  run port_conflicts 127.0.0.1 100.69.74.125;               [ "$status" -eq 1 ]
+  run port_conflicts 127.0.0.1 '[::]';                      [ "$status" -eq 1 ]
+  run port_conflicts 0.0.0.0 '[fd7a:115c:a1e0::782c:4a7e]'; [ "$status" -eq 1 ]
+}
+
+@test "port_users names the container or program behind a colliding listener and ignores the rest" {
+  export STUB_LISTENERS=$AI_SERVER_LISTENERS STUB_PUBLISHERS=3000=ai-server-webui-1
+  [ "$(port_users 127.0.0.1 3000)" = "container ai-server-webui-1" ]
+  [ "$(port_users 0.0.0.0 3000)" = "container ai-server-webui-1, tailscaled" ]
+  [ -z "$(port_users 127.0.0.2 3000)" ]
+  [ -z "$(port_users 127.0.0.1 3001)" ]
+  export STUB_LISTENERS='LISTEN 0 128 *:8085 *:*'
+  [ "$(port_users 127.0.0.1 8085)" = "another program" ]
+}
+
 # --- whole install (main) -----------------------------------------------------------------------
 
 @test "first install: configures the server, starts the stack after the firewall and creates the first key" {
@@ -376,6 +405,58 @@ call_line() {  # <pattern>: line number of the first recorded call matching patt
   [[ $output == *"DOCKER-USER firewall chain is missing"* ]]
   run grep -c "docker compose up" "$CALLS_LOG"
   [ "$output" = 0 ]
+}
+
+@test "a port another stack holds stops the install before the firewall, and the setting it names fixes it" {
+  run_installer MEDIA_DIR="$MEDIA" MEDIA_IMAGE=ghcr.io/acme/media-service \
+    STUB_LISTENERS="$AI_SERVER_LISTENERS" STUB_PUBLISHERS=3000=ai-server-webui-1
+  [ "$status" -eq 1 ]
+  [[ $output == *"Port 127.0.0.1:3000 (API_PORT) is already in use by container ai-server-webui-1."* ]]
+  [[ $output == *"Set API_PORT in $MEDIA/.env to a free port, then run the installer again."* ]]
+  run grep -c -e "media-egress-firewall" -e "models.sh sync" -e "docker compose up" "$CALLS_LOG"
+  [ "$output" = 0 ]
+  set_env_var "$MEDIA/.env" API_PORT 3001
+  run_installer MEDIA_DIR="$MEDIA" STUB_LISTENERS="$AI_SERVER_LISTENERS" STUB_PUBLISHERS=3000=ai-server-webui-1
+  [ "$status" -eq 0 ]
+  [[ $output == *"API key  mk_test_default_"* ]]
+}
+
+@test "the bundled proxy's port is checked on HTTP_BIND, and not at all without the proxy profile" {
+  nginx='LISTEN 0 511 203.0.113.10:8085 0.0.0.0:* users:(("nginx",pid=900,fd=6))'
+  first_install STUB_LISTENERS="$nginx"
+  open="$BATS_TEST_TMPDIR/open"
+  run_installer MEDIA_DIR="$open" MEDIA_IMAGE=ghcr.io/acme/media-service HTTP_BIND=0.0.0.0 STUB_LISTENERS="$nginx"
+  [ "$status" -eq 1 ]
+  [[ $output == *"Port 0.0.0.0:8085 (HTTP_PORT) is already in use by nginx."* ]]
+  set_env_var "$open/.env" COMPOSE_PROFILES local-db,local-redis
+  run_installer MEDIA_DIR="$open" STUB_LISTENERS="$nginx"
+  [ "$status" -eq 0 ]
+}
+
+@test "on updates the stack's own containers holding its ports are no collision" {
+  first_install
+  run_installer MEDIA_DIR="$MEDIA" STUB_OWN_PORTS="3000 8085" STUB_PUBLISHERS="3000=media-api-1 8085=media-proxy-1" \
+    STUB_LISTENERS=$'LISTEN 0 4096 127.0.0.1:3000 0.0.0.0:* users:(("docker-proxy",pid=7,fd=7))\nLISTEN 0 4096 127.0.0.1:8085 0.0.0.0:* users:(("docker-proxy",pid=8,fd=7))'
+  [ "$status" -eq 0 ]
+  grep -q "docker ps -q --filter label=com.docker.compose.project=media --filter publish=3000" "$CALLS_LOG"
+  grep -q "docker ps -q --filter label=com.docker.compose.project=media --filter publish=8085" "$CALLS_LOG"
+}
+
+@test "API_PORT in .env must be a port number" {
+  first_install
+  set_env_var "$MEDIA/.env" API_PORT 30o0
+  run_installer MEDIA_DIR="$MEDIA"
+  [ "$status" -eq 1 ]
+  [[ $output == *"API_PORT in $MEDIA/.env must be a port number (1-65535), not '30o0'."* ]]
+}
+
+@test "a failed docker compose up shows Docker's own error, not only where to look" {
+  run_installer MEDIA_DIR="$MEDIA" MEDIA_IMAGE=ghcr.io/acme/media-service STUB_COMPOSE_UP_EXIT=1 \
+    STUB_COMPOSE_UP_ERROR='Error response from daemon: Bind for 127.0.0.1:3000 failed: port is already allocated'
+  [ "$status" -eq 1 ]
+  [[ $output == *"The services did not start: Error response from daemon: Bind for 127.0.0.1:3000 failed: port is already allocated"* ]]
+  [[ $output == *"docker compose logs <service>"* ]]
+  grep -q "Container media-api-1  Starting" /var/log/media-install.log
 }
 
 @test "piped into bash, as in the curl one-liner, the script runs main" {
