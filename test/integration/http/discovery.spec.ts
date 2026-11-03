@@ -1,8 +1,10 @@
+import { existsSync, readFileSync, rmSync } from 'node:fs';
+
 import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import type { StartedRedisContainer } from '@testcontainers/redis';
 import type { Pool } from 'pg';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { ApiKeyService } from '../../../src/auth/api-keys';
 import { createDatabase } from '../../../src/db/database';
@@ -14,6 +16,28 @@ import { poolFor, startPostgres, startRedis } from '../support/containers';
 
 /** Every test host resolves to a public address; the fake yt-dlp answers by URL path. */
 const publicResolver: Resolver = () => Promise.resolve(['93.184.215.14']);
+
+const CALLS_LOG = '/tmp/fake-yt-dlp-calls.log';
+const SEED = 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP';
+const jar = (sid: string) => ['.fake.test', 'TRUE', '/', 'TRUE', '0', 'SID', sid].join('\t');
+
+interface AccessLine {
+  sid: string | null;
+  cookieFile: string | null;
+  username: string | null;
+  twofactor: string | null;
+}
+
+/** What the fake yt-dlp saw on its latest run for a guarded URL or a search. */
+function lastAccess(name: string): AccessLine | undefined {
+  if (!existsSync(CALLS_LOG)) return undefined;
+  const prefix = `access ${name} `;
+  const line = readFileSync(CALLS_LOG, 'utf8')
+    .split('\n')
+    .filter((entry) => entry.startsWith(prefix))
+    .at(-1);
+  return line === undefined ? undefined : (JSON.parse(line.slice(prefix.length)) as AccessLine);
+}
 
 interface ErrorBody {
   error: { code: string; message: string; details?: Record<string, unknown> };
@@ -325,6 +349,130 @@ describe('discovery endpoints (fake yt-dlp, Postgres + Redis)', () => {
         expect(presets.json<{ search_sites: string[] }>().search_sites).toEqual([]);
       } finally {
         await restricted.close();
+      }
+    });
+  });
+
+  describe('as the user, with their cookies and site login (SPEC §7f)', () => {
+    const as = (user: string) => ({ ...auth, 'x-user-id': user });
+    const asAda = (url: string, payload: object) =>
+      app.inject({ method: 'POST', url, headers: as('ada'), payload });
+    let jarId: string;
+
+    beforeAll(async () => {
+      const saved = await app.inject({
+        method: 'PUT',
+        url: '/v1/cookies',
+        headers: as('ada'),
+        payload: { cookies: jar('ada-sid') },
+      });
+      expect(saved.statusCode).toBe(200);
+      jarId = saved.json<{ id: string }>().id;
+    });
+
+    beforeEach(() => {
+      rmSync(CALLS_LOG, { force: true });
+    });
+
+    it('looks members-only media up with the jar, then shreds the jar', async () => {
+      const refused = await asAda('/v1/info', { url: 'https://fake.test/members' });
+      expect(refused.json<ErrorBody>().error.code).toBe('LOGIN_REQUIRED');
+      expect(lastAccess('members')?.sid).toBeNull();
+
+      const response = await asAda('/v1/info', {
+        url: 'https://fake.test/members',
+        cookies: jarId,
+      });
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toMatchObject({ type: 'video', title: 'members' });
+      const run = lastAccess('members');
+      expect(run?.sid).toBe('ada-sid');
+      expect(run?.cookieFile).toEqual(expect.any(String));
+      expect(existsSync(run?.cookieFile ?? '')).toBe(false);
+    });
+
+    it('takes true for the default jar', async () => {
+      const response = await asAda('/v1/info', { url: 'https://fake.test/members', cookies: true });
+      expect(response.statusCode).toBe(200);
+      expect(lastAccess('members')?.sid).toBe('ada-sid');
+    });
+
+    it('passes the jar to transcripts and comments', async () => {
+      const transcript = await asAda('/v1/transcripts', {
+        url: 'https://fake.test/members',
+        cookies: jarId,
+      });
+      // Past the members check: the fake has no subtitles for this video.
+      expect(transcript.json<ErrorBody>().error.code).toBe('NOT_FOUND');
+      expect(lastAccess('members')?.sid).toBe('ada-sid');
+
+      const comments = await asAda('/v1/comments', {
+        url: 'https://fake.test/members',
+        cookies: jarId,
+        max: 5,
+      });
+      expect(comments.statusCode).toBe(200);
+      expect(lastAccess('members')?.sid).toBe('ada-sid');
+    });
+
+    it('passes the jar to search, by id or as true', async () => {
+      const search = (query: string) =>
+        app.inject({ method: 'GET', url: `/v1/search?q=zoo${query}`, headers: as('ada') });
+      expect((await search(`&cookies=${jarId}`)).statusCode).toBe(200);
+      expect(lastAccess('search')?.sid).toBe('ada-sid');
+      expect((await search('&cookies=true')).statusCode).toBe(200);
+      expect(lastAccess('search')?.sid).toBe('ada-sid');
+      expect((await search('')).statusCode).toBe(200);
+      expect(lastAccess('search')?.sid).toBeNull();
+    });
+
+    it("never uses another user's jar", async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/info',
+        headers: as('bob'),
+        payload: { url: 'https://fake.test/members', cookies: jarId },
+      });
+      expect(response.statusCode).toBe(400);
+      expect(response.json<ErrorBody>().error.message).toMatch(/no such cookie jar/);
+      expect(lastAccess('members')).toBeUndefined();
+    });
+
+    it('needs an end user for cookies, and takes only true or a jar id', async () => {
+      const anonymous = await post('/v1/info', { url: 'https://fake.test/members', cookies: true });
+      expect(anonymous.statusCode).toBe(400);
+      expect(anonymous.json<ErrorBody>().error.message).toMatch(/end-user id/);
+      const named = await asAda('/v1/info', { url: 'https://fake.test/video', cookies: 'jar.txt' });
+      expect(named.json<ErrorBody>().error.code).toBe('VALIDATION_FAILED');
+      const searched = await app.inject({
+        method: 'GET',
+        url: '/v1/search?q=zoo&cookies=yes',
+        headers: as('ada'),
+      });
+      expect(searched.json<ErrorBody>().error.code).toBe('VALIDATION_FAILED');
+    });
+
+    it('signs in with the site login', async () => {
+      const withLogins = await build({ SITE_CREDENTIALS_ENABLED: 'true' });
+      try {
+        const saved = await withLogins.inject({
+          method: 'PUT',
+          url: '/v1/credentials/fake',
+          headers: as('ada'),
+          payload: { username: 'ada@example.com', password: 'hunter2', totp_seed: SEED },
+        });
+        expect(saved.statusCode).toBe(200);
+        const response = await withLogins.inject({
+          method: 'POST',
+          url: '/v1/info',
+          headers: as('ada'),
+          payload: { url: 'https://fake.test/login', credentials: 'fake' },
+        });
+        expect(response.statusCode).toBe(200);
+        expect(lastAccess('login')).toMatchObject({ username: 'ada@example.com' });
+        expect(lastAccess('login')?.twofactor).toMatch(/^\d{6}$/);
+      } finally {
+        await withLogins.close();
       }
     });
   });

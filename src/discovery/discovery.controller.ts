@@ -3,6 +3,8 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import type { FastifyReply } from 'fastify';
 import { createZodDto } from 'nestjs-zod';
 
+import type { AuthContext } from '../auth/api-keys';
+import { Auth } from '../auth/request-auth';
 import { abortOnDisconnect } from '../common/abort';
 import { DiscoveryService } from './discovery.service';
 import {
@@ -26,24 +28,40 @@ export class DiscoveryController {
 
   @Post('info')
   @HttpCode(200)
-  info(@Body() body: InfoRequestDto, @Res({ passthrough: true }) reply: FastifyReply) {
-    return this.discovery.info(body, abortOnDisconnect(reply));
+  info(
+    @Auth() auth: AuthContext,
+    @Body() body: InfoRequestDto,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ) {
+    return this.discovery.info(auth, body, abortOnDisconnect(reply));
   }
 
   @Get('search')
-  search(@Query() query: SearchQueryDto, @Res({ passthrough: true }) reply: FastifyReply) {
-    return this.discovery.search(query, abortOnDisconnect(reply));
+  search(
+    @Auth() auth: AuthContext,
+    @Query() query: SearchQueryDto,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ) {
+    return this.discovery.search(auth, query, abortOnDisconnect(reply));
   }
 
   @Post('transcripts')
   @HttpCode(200)
-  transcripts(@Body() body: TranscriptRequestDto, @Res({ passthrough: true }) reply: FastifyReply) {
-    return this.discovery.transcript(body, abortOnDisconnect(reply));
+  transcripts(
+    @Auth() auth: AuthContext,
+    @Body() body: TranscriptRequestDto,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ) {
+    return this.discovery.transcript(auth, body, abortOnDisconnect(reply));
   }
 
   @Post('comments')
   @HttpCode(200)
-  comments(@Body() body: CommentsRequestDto, @Res({ passthrough: true }) reply: FastifyReply) {
-    return this.discovery.comments(body, abortOnDisconnect(reply));
+  comments(
+    @Auth() auth: AuthContext,
+    @Body() body: CommentsRequestDto,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ) {
+    return this.discovery.comments(auth, body, abortOnDisconnect(reply));
   }
 }

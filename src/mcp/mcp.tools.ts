@@ -101,26 +101,30 @@ export class McpTools {
     };
 
     // Discovery (synchronous yt-dlp)
+    // `user_id` matters only with `cookies` or `credentials`: the lookup is then made as that user.
     tool(
       'get_media_info',
       'Metadata, formats, chapters and subtitles of a media URL (POST /v1/info)',
-      infoRequestSchema,
-      (args) => this.discovery.info(args),
+      infoRequestSchema.extend(user),
+      (args) => this.discovery.info(as(args.user_id), args),
     );
-    tool('search_media', 'Search a supported site (GET /v1/search)', searchQuerySchema, (args) =>
-      this.discovery.search(args),
+    tool(
+      'search_media',
+      'Search a supported site (GET /v1/search)',
+      searchQuerySchema.extend(user),
+      (args) => this.discovery.search(as(args.user_id), args),
     );
     tool(
       'get_transcript',
       'Subtitles or captions as text, SRT, VTT or JSON (POST /v1/transcripts)',
-      transcriptRequestSchema,
-      (args) => this.discovery.transcript(args),
+      transcriptRequestSchema.extend(user),
+      (args) => this.discovery.transcript(as(args.user_id), args),
     );
     tool(
       'get_comments',
       'Comments of a video, up to COMMENTS_SYNC_MAX (POST /v1/comments)',
-      commentsRequestSchema,
-      (args) => this.discovery.comments(args),
+      commentsRequestSchema.extend(user),
+      (args) => this.discovery.comments(as(args.user_id), args),
     );
     tool(
       'probe_media',

@@ -2,13 +2,15 @@ import { z } from 'zod';
 
 import { languageTag } from '../discovery/schemas';
 import { hasControlCharacters } from '../recipes/values';
+import { cookiesOption, credentialsOption } from './refs';
+
+export { type CookiesRef, cookiesOption, SITE_KEY } from './refs';
 
 /**
  * Access options of a download (SPEC §7f). Names only: cookie jars and site logins come from the
  * user's vault, proxies from the owner's PROXY_POOL; no raw yt-dlp syntax reaches the command.
  */
 
-export const SITE_KEY = /^[a-z0-9][a-z0-9_.-]{0,63}$/;
 const NAME = /^[A-Za-z0-9_-]{1,64}$/;
 const plain = (max: number) =>
   z
@@ -19,10 +21,6 @@ const plain = (max: number) =>
       (value) => !hasControlCharacters(value) && !value.includes('\n'),
       'must not contain control characters',
     );
-
-/** `true` is the user's default jar. */
-export const cookiesOption = z.union([z.literal(true), z.uuid()]);
-export type CookiesRef = z.output<typeof cookiesOption>;
 
 export const tvProviderSchema = z.strictObject({
   mso: z.string().regex(NAME, 'must be an Adobe Pass MSO id, e.g. Comcast_SSO'),
@@ -49,7 +47,7 @@ export type ExtractorArgs = z.output<typeof extractorArgsSchema>;
 
 export const accessShape = {
   cookies: cookiesOption.optional(),
-  credentials: z.string().regex(SITE_KEY, 'must be a site key from PUT /v1/credentials').optional(),
+  credentials: credentialsOption.optional(),
   video_password: plain(256).optional(),
   tv_provider: tvProviderSchema.optional(),
   proxy: z

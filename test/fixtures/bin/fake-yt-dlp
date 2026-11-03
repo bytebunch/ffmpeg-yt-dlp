@@ -70,6 +70,7 @@ function playlist() {
 }
 
 function search(count) {
+  accessReport('search');
   const base = fixture('search');
   const all = Array.from({ length: 30 }, (_, i) => ({
     ...base.entries[i % base.entries.length],
@@ -108,7 +109,7 @@ function video(extra = {}) {
 
 const CALLS_LOG = '/tmp/fake-yt-dlp-calls.log';
 
-/** The access flags of this run (SPEC §7f), logged for /members, /locked and /login. */
+/** The access flags of this run (SPEC §7f), logged for /members, /locked, /login and searches. */
 function accessReport(name) {
   const cookies = value('--cookies');
   const jar = cookies && fs.existsSync(cookies) ? fs.readFileSync(cookies, 'utf8') : '';
@@ -118,6 +119,7 @@ function accessReport(name) {
     CALLS_LOG,
     `access ${name} ${JSON.stringify({
       sid,
+      cookieFile: cookies ?? null,
       proxy: value('--proxy') ?? null,
       xff: value('--xff') ?? null,
       markWatched: has('--mark-watched'),
@@ -377,7 +379,8 @@ switch (parsed.pathname.split('/')[1]) {
   case 'login': {
     const name = parsed.pathname.split('/')[1];
     guarded(name);
-    print({ ...fixture('video'), id: name, title: name, subtitles: {}, automatic_captions: {} });
+    // As /video, so transcripts and comments runs get their files too.
+    video({ id: name, title: name, subtitles: {}, automatic_captions: {} });
     break;
   }
   case 'nosubs':

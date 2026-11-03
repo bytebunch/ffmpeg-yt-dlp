@@ -256,6 +256,24 @@ describe('MCP server (Postgres + Redis + workers)', () => {
     });
   });
 
+  it("looks media up with the user's cookies", async () => {
+    const jar = ['.fake.test', 'TRUE', '/', 'TRUE', '0', 'SID', 'gwen-sid'].join('\t');
+    const saved = await call<{ id: string }>('set_cookies', { cookies: jar, user_id: 'gwen' });
+    const refused = await call('get_media_info', {
+      url: 'https://fake.test/members',
+      user_id: 'gwen',
+    });
+    expect(refused.error).toBe(true);
+    const info = await call('get_media_info', {
+      url: 'https://fake.test/members',
+      cookies: saved.body.id,
+      user_id: 'gwen',
+    });
+    expect(info.error).toBe(false);
+    expect(info.body).toMatchObject({ title: 'members' });
+    await call('delete_cookies', { id: saved.body.id, user_id: 'gwen' });
+  });
+
   it('creates, lists, pauses and deletes watches', async () => {
     const created = await call<{ id: string; status: string }>('create_watch', {
       url: 'https://fake.test/playlist',

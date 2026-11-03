@@ -102,6 +102,7 @@ approved (2026-11-02): a static prototype in `design/`, recorded in `PRODUCT.md`
 | D58 | `install.sh` checks its published ports before the firewall and models and stops with who holds them and the `.env` key to change; it never picks another port itself | Found on the first VPS install (another stack on `127.0.0.1:3000`). `API_PORT` is also the upstream of a host nginx (`nginx/media.conf`), so a silently chosen port would surprise. Approved by the user. In SPEC §17 |
 | D59 | The bundled proxy looks `api` up again in Docker's DNS (`server api:… resolve`, `resolver 127.0.0.11 valid=5s`) instead of once at start | Found on the VPS: an `.env` change recreated `api` with a new address, compose left the proxy running, and every request got 502 until `docker compose restart proxy`. Updates recreate `api` the same way. Approved by the user. In SPEC §17 |
 | D60 | `install.sh` installs onto an outside Postgres when `DATABASE_URL` is given (no `local-db`, `verify-full` by default, CA copied to `certs/` and mounted at `/certs`) and checks it by running `migrate` before the firewall and the models; `migrate` joins the egress network | User's decision: each media server keeps its own database, bundled or Supabase. `migrate` was on the internal network only, so every install or update against an outside database failed. Approved by the user. In SPEC §17a |
+| D61 | `/v1/info`, `/v1/search`, `/v1/transcripts` and `/v1/comments` take the user's `cookies` (and, but for search, `credentials`), as §7 already listed for `/v1/info`; MCP's discovery tools take them with `user_id` | Found from OTW Studio: YouTube's bot check refused every lookup from the VPS while downloads with the same cookies worked. The jar goes through the jobs' `JobAccessResolver` into a private temp dir per call and is shredded after; with access, `PROXY_DEFAULT_BY_EXTRACTOR` applies as it does for that user's jobs (without access, discovery still uses no proxy, as before). Asked for by the user. In SPEC §4, §7f |
 
 ## Steps
 
@@ -1219,4 +1220,31 @@ Each media server keeps its own database, bundled Postgres or Supabase (user's d
   "connect ECONNREFUSED …").
 - Docs: SPEC §17 and §17a, DEPLOY-QUICKSTART (Supabase command, installer steps), `.env.example`.
 - Not changed: the nightly `pg_dump` uses `DATABASE_URL` as given (libpq `prefer`: encrypted, not verified).
+
+## Lookups as the user (D61, 2026-11-03) ✅
+
+OTW Studio found it: a member's YouTube cookies got their downloads past YouTube's bot check on the
+VPS, but Launch's lookup (`/v1/info`) had no way to take them, so every YouTube link failed with
+`BOT_CHECK` before a job could be started. SPEC §7 already listed the access options as fields of
+`/v1/info`; the endpoint never had them.
+
+- `/v1/info`, `/v1/transcripts` and `/v1/comments` take `cookies` (`true` or a jar id) and
+  `credentials` (a site key); `/v1/search` takes `cookies` as a query parameter (`true` or a jar id).
+  They need an end-user id, as the vault does; without them a call is unchanged and needs none.
+- `DiscoveryService` runs those calls through `JobAccessResolver`, as downloads do: the jar is
+  decrypted into a temp dir made for that call (0700, the file 0600), passed with `--cookies`, then
+  overwritten and removed, as is the dir, also when the call fails or the client disconnects.
+  `AccessModule` now provides the resolver to the API too.
+- The field definitions moved to `src/access/refs.ts`: `options.ts` imports the discovery schemas, so
+  the schemas could not import from it without a cycle. `options.ts` re-exports them.
+- MCP: `get_media_info`, `search_media`, `get_transcript` and `get_comments` take `user_id`, so
+  `cookies` and `credentials` work there too.
+- Tests, written first and failing on the old code (400, unknown field): 7 integration tests
+  (members-only media looked up with the jar, its file gone afterwards; `true` for the default jar;
+  transcripts and comments; search by id and `true`, and without; another user's jar refused; no
+  end user and a malformed reference refused; a site login with its TOTP code) and 1 MCP test. The
+  fake yt-dlp now logs the jar's path, logs the access of searches, and serves transcripts and
+  comments runs on its guarded URLs.
+- `./dev pnpm check`: Prettier, ESLint and types clean, **742/742** (56 files).
+- Not yet on the VPS: it needs the new image there (`deploy.sh <sha>` once CI has published it).
 

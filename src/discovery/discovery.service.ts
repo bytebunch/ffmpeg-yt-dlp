@@ -4,6 +4,11 @@ import path from 'node:path';
 
 import { Inject, Injectable } from '@nestjs/common';
 
+import { JobAccessResolver } from '../access/job-access';
+import type { AccessOptions } from '../access/options';
+import type { CookiesRef } from '../access/refs';
+import type { AuthContext } from '../auth/api-keys';
+import { requireUserId } from '../auth/request-auth';
 import { AppError } from '../common/errors';
 import { APP_CONFIG } from '../common/tokens';
 import type { AppConfig } from '../config/env.schema';
@@ -53,6 +58,12 @@ function render(cues: Cue[], format: TranscriptFormat): { cues: Cue[] } | { cont
   }
 }
 
+/** The caller's vault entries a discovery request names (SPEC §7f). */
+interface CallAccess {
+  cookies?: CookiesRef | undefined;
+  credentials?: string | undefined;
+}
+
 /** Synchronous yt-dlp calls behind /v1/info, /v1/search, /v1/transcripts and /v1/comments. */
 @Injectable()
 export class DiscoveryService {
@@ -60,13 +71,48 @@ export class DiscoveryService {
     @Inject(APP_CONFIG) private readonly config: AppConfig,
     private readonly runner: YtDlpRunner,
     @Inject(URL_RESOLVER) private readonly resolve: Resolver,
+    private readonly access: JobAccessResolver,
   ) {}
 
   private get timeoutMs(): number {
     return this.config.PLAYLIST_EXPAND_TIMEOUT_SECONDS * 1000;
   }
 
-  async info(request: InfoRequest, signal?: AbortSignal): Promise<Record<string, unknown>> {
+  /**
+   * Runs one call as the user when the request names their jar or site login, as their downloads
+   * run: the jar goes to a private temp dir for this call only and is shredded after (SPEC §7f,
+   * §12). Without either, the call runs as before and needs no end-user id.
+   */
+  private async withAccess<T>(
+    auth: AuthContext,
+    request: CallAccess,
+    target: { extractor?: string; url?: string },
+    run: (accessArgs: string[]) => Promise<T>,
+  ): Promise<T> {
+    const options: AccessOptions = {
+      ...(request.cookies !== undefined && { cookies: request.cookies }),
+      ...(request.credentials !== undefined && { credentials: request.credentials }),
+    };
+    if (Object.keys(options).length === 0) return run([]);
+    const owner = { clientId: auth.clientId, userId: requireUserId(auth) };
+    const dir = await mkdtemp(path.join(tmpdir(), 'access-'));
+    try {
+      const prepared = await this.access.prepare(owner, options, {}, dir);
+      try {
+        return await run(prepared.args(target));
+      } finally {
+        await prepared.dispose();
+      }
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  }
+
+  async info(
+    auth: AuthContext,
+    request: InfoRequest,
+    signal?: AbortSignal,
+  ): Promise<Record<string, unknown>> {
     const url = await guardUrl(request.url, this.resolve);
     const offset = decodeCursor(request.cursor);
     const args = [
@@ -78,10 +124,12 @@ export class DiscoveryService {
       ...(request.preset ? formatSelectionArgs(request.preset) : []),
     ];
     const raw = asRecord(
-      await this.runner.json(args, url.href, {
-        timeoutMs: this.timeoutMs,
-        ...(signal && { signal }),
-      }),
+      await this.withAccess(auth, request, { url: url.href }, (accessArgs) =>
+        this.runner.json([...args, ...accessArgs], url.href, {
+          timeoutMs: this.timeoutMs,
+          ...(signal && { signal }),
+        }),
+      ),
     );
     const include = new Set(request.include);
     if (!isPlaylist(raw)) return mapVideo(raw, include);
@@ -94,7 +142,11 @@ export class DiscoveryService {
     return mapPlaylist(raw, { offset, limit: request.limit }, include);
   }
 
-  async search(query: SearchQuery, signal?: AbortSignal): Promise<Record<string, unknown>> {
+  async search(
+    auth: AuthContext,
+    query: SearchQuery,
+    signal?: AbortSignal,
+  ): Promise<Record<string, unknown>> {
     if (!siteAllowed(query.site, this.config.SITE_ALLOWLIST)) {
       throw new AppError(
         'FEATURE_DISABLED',
@@ -102,12 +154,15 @@ export class DiscoveryService {
       );
     }
     const target = searchTarget(query.site, query.sort, query.q, query.limit);
+    const cookies = query.cookies === 'true' ? true : query.cookies;
     const raw = asRecord(
-      await this.runner.json(['--flat-playlist', ...target.args], target.url, {
-        timeoutMs: this.timeoutMs,
-        extractors: [target.extractor],
-        ...(signal && { signal }),
-      }),
+      await this.withAccess(auth, { cookies }, { extractor: target.extractor }, (accessArgs) =>
+        this.runner.json(['--flat-playlist', ...target.args, ...accessArgs], target.url, {
+          timeoutMs: this.timeoutMs,
+          extractors: [target.extractor],
+          ...(signal && { signal }),
+        }),
+      ),
     );
     const entries = Array.isArray(raw.entries) ? (raw.entries as unknown[]) : [];
     return {
@@ -119,6 +174,7 @@ export class DiscoveryService {
   }
 
   async transcript(
+    auth: AuthContext,
     request: TranscriptRequest,
     signal?: AbortSignal,
   ): Promise<Record<string, unknown>> {
@@ -127,26 +183,29 @@ export class DiscoveryService {
     const acceptAuto = request.auto || request.translate_to !== undefined;
     const workDir = await mkdtemp(path.join(tmpdir(), 'transcript-'));
     try {
-      await this.runner.run(
-        [
-          '--no-playlist',
-          '--skip-download',
-          '--write-subs',
-          ...(acceptAuto ? ['--write-auto-subs'] : []),
-          '--sub-langs',
-          langs.join(','),
-          '--sub-format',
-          `${READABLE_SUBTITLE_EXTS.join('/')}/best`,
-          '--write-info-json',
-          '-o',
-          '%(id)s.%(ext)s',
-        ],
-        url.href,
-        {
-          timeoutMs: this.config.TRANSCRIPT_TIMEOUT_SECONDS * 1000,
-          workDir,
-          ...(signal && { signal }),
-        },
+      await this.withAccess(auth, request, { url: url.href }, (accessArgs) =>
+        this.runner.run(
+          [
+            '--no-playlist',
+            '--skip-download',
+            '--write-subs',
+            ...(acceptAuto ? ['--write-auto-subs'] : []),
+            '--sub-langs',
+            langs.join(','),
+            '--sub-format',
+            `${READABLE_SUBTITLE_EXTS.join('/')}/best`,
+            '--write-info-json',
+            '-o',
+            '%(id)s.%(ext)s',
+            ...accessArgs,
+          ],
+          url.href,
+          {
+            timeoutMs: this.config.TRANSCRIPT_TIMEOUT_SECONDS * 1000,
+            workDir,
+            ...(signal && { signal }),
+          },
+        ),
       );
       const files = await readdir(workDir);
       const infoFile = files.find((name) => name.endsWith(INFO_SUFFIX));
@@ -181,7 +240,11 @@ export class DiscoveryService {
     }
   }
 
-  async comments(request: CommentsRequest, signal?: AbortSignal): Promise<Record<string, unknown>> {
+  async comments(
+    auth: AuthContext,
+    request: CommentsRequest,
+    signal?: AbortSignal,
+  ): Promise<Record<string, unknown>> {
     if (request.max > this.config.COMMENTS_SYNC_MAX) {
       throw new AppError(
         'VALIDATION_FAILED',
@@ -191,16 +254,19 @@ export class DiscoveryService {
     }
     const url = await guardUrl(request.url, this.resolve);
     const raw = asRecord(
-      await this.runner.json(
-        [
-          '--no-playlist',
-          '--skip-download',
-          '--write-comments',
-          '--extractor-args',
-          `youtube:max_comments=${request.max};comment_sort=${request.sort}`,
-        ],
-        url.href,
-        { timeoutMs: this.timeoutMs, ...(signal && { signal }) },
+      await this.withAccess(auth, request, { url: url.href }, (accessArgs) =>
+        this.runner.json(
+          [
+            '--no-playlist',
+            '--skip-download',
+            '--write-comments',
+            '--extractor-args',
+            `youtube:max_comments=${request.max};comment_sort=${request.sort}`,
+            ...accessArgs,
+          ],
+          url.href,
+          { timeoutMs: this.timeoutMs, ...(signal && { signal }) },
+        ),
       ),
     );
     return mapComments(raw, request.max);

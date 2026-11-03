@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { cookiesOption, credentialsOption } from '../access/refs';
 import { INFO_INCLUDES } from './mappers';
 import { DOWNLOAD_PRESETS } from './presets';
 import { SEARCH_SITE_NAMES, type SearchSiteName } from './search';
@@ -26,8 +27,21 @@ export const languageTag = z
   .string()
   .regex(/^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/, 'must be a language tag such as en or pt-BR');
 
+const COOKIES_HELP = "The user's cookie jar: true for their default jar, or its id";
+
+/**
+ * The user's own access for one call (SPEC §7f): a site that answers only signed-in people (a bot
+ * check, members-only, age-gated) answers the lookup as it answers their downloads. Needs an
+ * end-user id.
+ */
+const accessFields = {
+  cookies: cookiesOption.optional().describe(COOKIES_HELP),
+  credentials: credentialsOption.optional().describe("The user's site login, by its site key"),
+};
+
 export const infoRequestSchema = z.strictObject({
   url: mediaUrl,
+  ...accessFields,
   include: z.array(z.enum(INFO_INCLUDES)).max(INFO_INCLUDES.length).default([]),
   mode: z.enum(['auto', 'single', 'playlist']).default('auto'),
   cursor: z.string().max(200).optional().describe('next_cursor from the previous playlist page'),
@@ -45,10 +59,16 @@ export const searchQuerySchema = z.strictObject({
   limit: z.coerce.number().int().min(1).max(50).default(10),
   site: z.enum(SEARCH_SITE_NAMES as [SearchSiteName, ...SearchSiteName[]]).default('youtube'),
   sort: z.enum(['relevance', 'date']).default('relevance'),
+  // A query string carries "true"; MCP sends JSON true.
+  cookies: z
+    .union([z.literal(true), z.literal('true'), z.uuid()])
+    .optional()
+    .describe(COOKIES_HELP),
 });
 
 export const transcriptRequestSchema = z.strictObject({
   url: mediaUrl,
+  ...accessFields,
   lang: z
     .array(languageTag)
     .min(1)
@@ -62,6 +82,7 @@ export const transcriptRequestSchema = z.strictObject({
 
 export const commentsRequestSchema = z.strictObject({
   url: mediaUrl,
+  ...accessFields,
   max: z.number().int().min(1).max(10_000).default(50),
   sort: z.enum(['top', 'new']).default('top'),
 });

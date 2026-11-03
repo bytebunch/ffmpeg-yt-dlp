@@ -98,10 +98,10 @@ agents ───MCP───┘   ▲  │ tus uploads (/u)                     
 
 | Method | Path | Purpose |
 |---|---|---|
-| `POST` | `/v1/info` | Metadata for a URL. Body: `url`, `include[]` (`formats`, `subtitles`, `thumbnails`, `chapters`, `heatmap`, `description`, `tags`), `mode`, `cursor`. Playlists return title, uploader, item count and paginated `entries` (index, id, title, duration, url, upload date, live status) |
-| `GET` | `/v1/search?q=&limit=&site=&sort=` | Search. `site` = `youtube` (default; `sort=date` uses `ytsearchdate`) or any allow-listed extractor that exposes a yt-dlp search key (SoundCloud, Bilibili, Niconico, …) |
-| `POST` | `/v1/transcripts` | Subtitles for one item as `txt`, `srt`, `vtt` or `json` (cues with timestamps). Body: `url`, `lang[]`, `auto` (accept auto-generated), `translate_to` (auto-translated tracks where the site offers them), `format`. Timeout `TRANSCRIPT_TIMEOUT_SECONDS` |
-| `POST` | `/v1/comments` | Comments for one item: `max` (≤ `COMMENTS_SYNC_MAX`), `sort` (`top`/`new`). Above the cap the request returns `202` with a `comments` job whose output is a JSON file |
+| `POST` | `/v1/info` | Metadata for a URL. Body: `url`, `include[]` (`formats`, `subtitles`, `thumbnails`, `chapters`, `heatmap`, `description`, `tags`), `mode`, `cursor`, and the user's `cookies` and `credentials` (§7f). Playlists return title, uploader, item count and paginated `entries` (index, id, title, duration, url, upload date, live status) |
+| `GET` | `/v1/search?q=&limit=&site=&sort=&cookies=` | Search. `site` = `youtube` (default; `sort=date` uses `ytsearchdate`) or any allow-listed extractor that exposes a yt-dlp search key (SoundCloud, Bilibili, Niconico, …). `cookies` = `true` or a jar id (§7f) |
+| `POST` | `/v1/transcripts` | Subtitles for one item as `txt`, `srt`, `vtt` or `json` (cues with timestamps). Body: `url`, `lang[]`, `auto` (accept auto-generated), `translate_to` (auto-translated tracks where the site offers them), `format`, `cookies`, `credentials` (§7f). Timeout `TRANSCRIPT_TIMEOUT_SECONDS` |
+| `POST` | `/v1/comments` | Comments for one item: `max` (≤ `COMMENTS_SYNC_MAX`), `sort` (`top`/`new`), `cookies`, `credentials` (§7f). Above the cap the request returns `202` with a `comments` job whose output is a JSON file |
 | `POST` | `/v1/probe` | ffprobe of any **input** (§5): format, streams, chapters, tags, duration, bitrate. Remote inputs are fetched up to `PROBE_MAX_MB`; larger ones return `202` with a `probe` job |
 | `GET` | `/v1/presets` | Download presets, recipe operations and their parameter schemas (JSON Schema generated from the Zod schemas) — lets agents discover options |
 
@@ -309,7 +309,7 @@ Expansion runs `--flat-playlist -J` with `--playlist-end` set from the selection
 
 | Option | Values | Mechanism |
 |---|---|---|
-| `cookies` | `true` (user's default jar) or a `cookieId` | Jar decrypted to a temp file inside the job dir, passed with `--cookies`, deleted after the run. Enables age-gated, member-only, private and subscription content the user can access |
+| `cookies` | `true` (user's default jar) or a `cookieId` | Jar decrypted to a temp file inside the job dir (for `/v1/info`, `/v1/search`, `/v1/transcripts` and `/v1/comments`, a private temp dir for that call), passed with `--cookies`, deleted after the run. Enables age-gated, member-only, private and subscription content the user can access |
 | `credentials` | `siteKey` from the user's vault | `-u`/`-p` (and `-2` with a TOTP generated from the stored seed) only when `SITE_CREDENTIALS_ENABLED=true`; cookies are the recommended path |
 | `video_password` | string, per request, not stored | `--video-password` |
 | `tv_provider` | `{ mso, username, password }` per request | `--ap-mso --ap-username --ap-password` when `TV_PROVIDER_ENABLED=true` |
