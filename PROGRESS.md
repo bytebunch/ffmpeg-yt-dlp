@@ -103,6 +103,7 @@ approved (2026-11-02): a static prototype in `design/`, recorded in `PRODUCT.md`
 | D59 | The bundled proxy looks `api` up again in Docker's DNS (`server api:… resolve`, `resolver 127.0.0.11 valid=5s`) instead of once at start | Found on the VPS: an `.env` change recreated `api` with a new address, compose left the proxy running, and every request got 502 until `docker compose restart proxy`. Updates recreate `api` the same way. Approved by the user. In SPEC §17 |
 | D60 | `install.sh` installs onto an outside Postgres when `DATABASE_URL` is given (no `local-db`, `verify-full` by default, CA copied to `certs/` and mounted at `/certs`) and checks it by running `migrate` before the firewall and the models; `migrate` joins the egress network | User's decision: each media server keeps its own database, bundled or Supabase. `migrate` was on the internal network only, so every install or update against an outside database failed. Approved by the user. In SPEC §17a |
 | D61 | `/v1/info`, `/v1/search`, `/v1/transcripts` and `/v1/comments` take the user's `cookies` (and, but for search, `credentials`), as §7 already listed for `/v1/info`; MCP's discovery tools take them with `user_id` | Found from OTW Studio: YouTube's bot check refused every lookup from the VPS while downloads with the same cookies worked. The jar goes through the jobs' `JobAccessResolver` into a private temp dir per call and is shredded after; with access, `PROXY_DEFAULT_BY_EXTRACTOR` applies as it does for that user's jobs (without access, discovery still uses no proxy, as before). Asked for by the user. In SPEC §4, §7f |
+| D62 | `remux` takes `video_codec` (`h264`/`hevc`) and `audio_codec` (`aac`): streams in that codec are copied, others converted to it; built-in recipe `h264_mp4` (mp4, H.264 + AAC, `fix_incompatible`) | Asked for by the user: YouTube's 2K and 4K are VP9/AV1 only, which the default MP4 remux keeps, and QuickTime and TVs can't play. `recode` couldn't do it: yt-dlp only re-encodes when the container changes. Studio sends `then: h264_mp4` with `video_codec: h264`, so H.264 streams are taken at the source and only the rest is re-encoded. In SPEC §8 (remux), §8k |
 
 ## Steps
 
@@ -1247,4 +1248,21 @@ VPS, but Launch's lookup (`/v1/info`) had no way to take them, so every YouTube 
   comments runs on its guarded URLs.
 - `./dev pnpm check`: Prettier, ESLint and types clean, **742/742** (56 files).
 - Not yet on the VPS: it needs the new image there (`deploy.sh <sha>` once CI has published it).
+
+## H.264 when it isn't already (D62, 2026-11-03) ✅
+
+- `remux` gains `video_codec` (`h264`, `hevc`) and `audio_codec` (`aac`). A stream already in that
+  codec is copied; any other is converted to it, whatever `fix_incompatible` says. A container that
+  can't hold the codec (`webm` with `h264`) is refused when the recipe is planned. Conversion uses the
+  encoder defaults of `encode` (x264 `veryfast`, CRF 23, `yuv420p`), and the plan's cost counts it,
+  so a 4K conversion is costed as one.
+- Built-in recipe `h264_mp4`: one `remux` to mp4 with `video_codec: h264`, `audio_codec: aac` and
+  `fix_incompatible: true`. As a download's `then` it gives an MP4 that plays everywhere.
+- Not handled: HDR (10-bit PQ/HLG) sources come out 8-bit without tone mapping, so their colours look
+  flat. Rare on YouTube; `encode` with a tone-mapping step would be the fix.
+- Tests, written first: unit (VP9 + Opus 4K converted with `libx264`/`yuv420p`/`aac` and no copy;
+  H.264 + AAC copied; the cost of converting far above copying; `webm` refused; filters before it
+  refused), real ffmpeg 8.1 (a VP9/Opus WebM becomes H.264/AAC MP4; an H.264/AAC input comes out
+  with its video packets identical), the preset in the catalogue. The integration test counting the
+  built-in recipes now expects 22.
 

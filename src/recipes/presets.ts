@@ -132,6 +132,17 @@ export const PRESETS: Record<string, Preset> = {
   archive_mkv: preset('Every stream remuxed into MKV', none, () => [
     { op: 'remux', name: 'archive', container: 'mkv' },
   ]),
+  // Plays everywhere (QuickTime, TVs, editors); a download already in H.264 and AAC is only copied.
+  h264_mp4: preset('MP4 with H.264 video and AAC audio, re-encoding only what isn’t', none, () => [
+    {
+      op: 'remux',
+      name: 'h264',
+      container: 'mp4',
+      video_codec: 'h264',
+      audio_codec: 'aac',
+      fix_incompatible: true,
+    },
+  ]),
   audio_waveform_video: preset('Waveform video (1920x1080) for audio', none, () => [
     { op: 'audio_to_video', visual: 'waveform', size: { width: 1920, height: 1080 } },
     {

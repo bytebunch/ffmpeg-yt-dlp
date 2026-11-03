@@ -409,6 +409,10 @@ const remux = z.strictObject({
   container: z.enum(['mp4', 'mov', 'mkv', 'webm', 'mpegts']),
   fix_incompatible: z.boolean().default(false),
   faststart: z.boolean().default(true),
+  /** Video in this codec is copied; video in any other is converted to it. */
+  video_codec: z.enum(['h264', 'hevc']).optional(),
+  /** Audio in this codec is copied; audio in any other is converted to it. */
+  audio_codec: z.enum(['aac']).optional(),
 });
 
 const fix = z.strictObject({

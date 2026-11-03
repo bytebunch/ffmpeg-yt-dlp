@@ -113,6 +113,8 @@ async function failure(promise: Promise<unknown>): Promise<AppError> {
 const clip = path.join(root, 'clip.mp4');
 const letterbox = path.join(root, 'letterbox.mp4');
 const subtitled = path.join(root, 'subtitled.mkv');
+/** What YouTube serves at 1440p and 4K: VP9 video with Opus audio. */
+const vp9 = path.join(root, 'vp9.webm');
 
 describe('recipes on real ffmpeg 8.1', () => {
   beforeAll(() => {
@@ -137,6 +139,9 @@ describe('recipes on real ffmpeg 8.1', () => {
     );
     // Only video and audio: the mp4 chapter track is a data stream mkv cannot copy.
     ff(`-i ${clip} -i subs.srt -map 0:v -map 0:a -map 1 -c copy -c:s srt ${subtitled}`);
+    ff(
+      `-f lavfi -i testsrc2=size=320x240:rate=25:duration=2 -f lavfi -i sine=frequency=440:duration=2:sample_rate=48000 -c:v libvpx-vp9 -deadline realtime -cpu-used 8 -c:a libopus ${vp9}`,
+    );
   }, 120_000);
 
   afterAll(() => {
@@ -325,6 +330,40 @@ describe('recipes on real ffmpeg 8.1', () => {
     expect(codecsOf(fileOf(remuxed, 'mp4'))).toEqual(['h264', 'aac', 'mov_text']);
     const fixed = await run(clip, [{ op: 'fix', name: 'fixed', fill_gaps: true }]);
     expect(codecsOf(fileOf(fixed, 'fixed'))).toEqual(['h264', 'aac']);
+  });
+
+  it('makes an H.264 and AAC MP4, re-encoding only what is not already in those codecs', async () => {
+    const h264 = {
+      op: 'remux',
+      name: 'h264',
+      container: 'mp4',
+      video_codec: 'h264',
+      audio_codec: 'aac',
+    };
+    const converted = await run(vp9, [h264]);
+    expect(codecsOf(fileOf(converted, 'h264'))).toEqual(['h264', 'aac']);
+    expect(durationOf(fileOf(converted, 'h264'))).toBeCloseTo(2, 0);
+
+    // H.264 and AAC already: copied, so the video is bit for bit the input's.
+    const kept = await run(clip, [h264]);
+    expect(codecsOf(fileOf(kept, 'h264'))).toEqual(['h264', 'aac']);
+    const packets = (file: string) =>
+      execFileSync(
+        'ffprobe',
+        [
+          '-v',
+          'error',
+          '-select_streams',
+          'v:0',
+          '-show_entries',
+          'packet=size',
+          '-of',
+          'csv=p=0',
+          file,
+        ],
+        { encoding: 'utf8' },
+      );
+    expect(packets(fileOf(kept, 'h264'))).toBe(packets(clip));
   });
 
   it('writes chapters and allow-listed metadata', async () => {

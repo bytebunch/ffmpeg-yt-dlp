@@ -512,7 +512,7 @@ Expansion runs `--flat-playlist -J` with `--playlist-end` set from the selection
 |---|---|---|
 | `hls` (terminal) | `segment_s` 2–10, `variants[]` of `{ height, video_bitrate_kbps, audio_bitrate_kbps }` or `ladder: auto` (1080/720/480/360 ≤ source), `segment_type: mpegts|fmp4`, `playlist_type: vod`, `independent_segments: bool`, `audio_only_variant: bool` | `-f hls -hls_time -hls_playlist_type vod -hls_segment_type -master_pl_name master.m3u8 -var_stream_map "v:0,a:0 v:1,a:1" -hls_flags independent_segments`, `-g`/`-sc_threshold 0`/`-keyint_min` aligned to segments; one encoder per variant from a `split` |
 | `dash` (terminal) | `segment_s`, `variants[]`, `single_file: bool` | `-f dash -seg_duration -adaptation_sets "id=0,streams=v id=1,streams=a"`; served under `/d/hls/:outputId/` with the same token |
-| `remux` (terminal) | `container`, `fix_incompatible: bool` (re-encode only streams the container rejects, e.g. subtitles to `mov_text`, Vorbis to AAC for mp4), `faststart` | `-c copy`, selective `-c:a`/`-c:s` |
+| `remux` (terminal) | `container`, `fix_incompatible: bool` (re-encode only streams the container rejects, e.g. subtitles to `mov_text`, Vorbis to AAC for mp4), `faststart`, `video_codec` (`h264`/`hevc`) and `audio_codec` (`aac`): streams already in that codec are copied, any other is converted to it | `-c copy`, selective `-c:v`/`-c:a`/`-c:s` |
 | `fragmented_mp4` (terminal) | `fragment_s` | `-movflags +frag_keyframe+empty_moov+default_base_moof -frag_duration` |
 | `mpegts` (terminal) | `pcr`, `muxrate` | `-f mpegts -mpegts_flags` |
 | `fix` (terminal) | `regen_timestamps`, `ignore_errors`, `fix_duration`, `fill_gaps`, `faststart` | `-fflags +genpts+igndts`, `-err_detect ignore_err`, `-avoid_negative_ts make_zero`, `-max_interleave_delta 0`, `-movflags +faststart`, `aresample=async=1` |
@@ -557,6 +557,7 @@ Expansion runs `--flat-playlist -J` with `--playlist-end` set from the selection
 | `storyboard_vtt` | `storyboard` 5 s interval |
 | `hls_ladder` | `hls` auto ladder, 6 s fmp4 segments |
 | `archive_mkv` | `remux` mkv keeping all streams, chapters and attachments |
+| `h264_mp4` | `remux` mp4 with `video_codec: h264`, `audio_codec: aac`, `fix_incompatible`: plays everywhere; H.264 and AAC are copied, VP9/AV1/HEVC and Opus re-encoded (x264 veryfast, 8-bit) |
 | `audio_waveform_video` | `audio_to_video` waveform 1920×1080 → `encode` h264 stillimage tune |
 | `burn_subtitles` | `subtitles_burn` from an srt input → `web_mp4_1080` |
 | `loudness_report` | `loudness` + `volume` + `silence_detect` |

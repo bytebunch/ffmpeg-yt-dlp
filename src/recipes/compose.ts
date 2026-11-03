@@ -17,6 +17,7 @@ import {
   chaptersFile,
   containerArgs,
   DEFAULT_AUDIO_KBPS,
+  type EncodedVideo,
   streamLanguage,
   videoArgs,
 } from './encode';
@@ -1676,8 +1677,17 @@ class Composer implements FilterContext {
     this.cost += ((end - step.start) / 60) * 2;
   }
 
-  /** Per-stream maps for remux and fix: copy what the container takes, convert or refuse the rest. */
-  private streamCopy(container: Container, index: number, convert: boolean, skipAudio = false) {
+  /**
+   * Per-stream maps for remux and fix: copy what the container takes, convert or refuse the rest.
+   * With `want`, video and audio are copied only in those codecs and converted to them otherwise.
+   */
+  private streamCopy(
+    container: Container,
+    index: number,
+    convert: boolean,
+    skipAudio = false,
+    want: { video?: EncodedVideo; audio?: 'aac' } = {},
+  ) {
     if (this.state.filtered || this.state.accurateTrim) {
       throw invalid(index, 'remux and fix work on the untouched input; put them before any filter');
     }
@@ -1714,14 +1724,19 @@ class Composer implements FilterContext {
         return;
       }
       const n = counts[letter];
-      if (copyAllowed(container, kind, stream.codec)) {
+      const wanted = kind === 'video' ? want.video : kind === 'audio' ? want.audio : undefined;
+      const keep =
+        wanted === undefined ? copyAllowed(container, kind, stream.codec) : stream.codec === wanted;
+      const videoCodec =
+        kind === 'video' ? (want.video ?? ENCODE_CODECS[container].video[0]) : undefined;
+      if (keep) {
         maps.push(`0:${streamIndex}`);
         args.push(`-c:${letter}:${n}`, 'copy');
-      } else if (!convert) {
+      } else if (!convert && wanted === undefined) {
         problems.push(`${kind} stream ${streamIndex} (${stream.codec ?? 'unknown'})`);
         return;
-      } else if (kind === 'video' && ENCODE_CODECS[container].video[0]) {
-        const codec = ENCODE_CODECS[container].video[0];
+      } else if (videoCodec) {
+        const codec = videoCodec;
         maps.push(`0:${streamIndex}`);
         args.push(
           ...videoArgs(codec, undefined, { fps: stream.fps }).map((arg) =>
@@ -1732,11 +1747,11 @@ class Composer implements FilterContext {
           this.minutes *
           this.pixelFactor(stream.width, stream.height, stream.fps) *
           VIDEO_COST[codec];
-      } else if (kind === 'audio' && ENCODE_CODECS[container].audio[0]) {
+      } else if (kind === 'audio' && (want.audio ?? ENCODE_CODECS[container].audio[0])) {
         maps.push(`0:${streamIndex}`);
         args.push(
           `-c:a:${n}`,
-          ENCODE_CODECS[container].audio[0] === 'opus' ? 'libopus' : 'aac',
+          (want.audio ?? ENCODE_CODECS[container].audio[0]) === 'opus' ? 'libopus' : 'aac',
           `-b:a:${n}`,
           '192k',
         );
@@ -1766,7 +1781,18 @@ class Composer implements FilterContext {
 
   private remux(step: StepOf<'remux'>, index: number): void {
     const name = this.name(index);
-    const streams = this.streamCopy(step.container, index, step.fix_incompatible);
+    for (const [kind, codec] of [
+      ['video', step.video_codec],
+      ['audio', step.audio_codec],
+    ] as const) {
+      if (codec !== undefined && !copyAllowed(step.container, kind, codec)) {
+        throw invalid(index, `${step.container} cannot hold ${codec}`);
+      }
+    }
+    const streams = this.streamCopy(step.container, index, step.fix_incompatible, false, {
+      ...(step.video_codec !== undefined && { video: step.video_codec }),
+      ...(step.audio_codec !== undefined && { audio: step.audio_codec }),
+    });
     if (streams.maps.length === 0)
       throw invalid(index, 'no stream of the input fits the container');
     this.pushCopyOutput(name, 'remux', step.container, streams, [], step.faststart);

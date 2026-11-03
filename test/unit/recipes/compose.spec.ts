@@ -350,6 +350,35 @@ describe('compose', () => {
     ).toMatch(/untouched input/);
   });
 
+  it('remuxes into the codecs asked for: copies streams already in them, converts the rest', () => {
+    const youtube4k: ProbeSummary = {
+      ...VIDEO,
+      streams: [
+        stream({ type: 'video', codec: 'vp9', width: 3840, height: 2160, fps: 30 }),
+        stream({ type: 'audio', codec: 'opus', channels: 2, sample_rate: 48_000 }),
+      ],
+    };
+    const h264 = { op: 'remux', container: 'mp4', video_codec: 'h264', audio_codec: 'aac' };
+    const converted = plan([h264], youtube4k);
+    expect(main(converted).args).toEqual(
+      expect.arrayContaining(['-c:v:0', 'libx264', '-pix_fmt:v:0', 'yuv420p', '-c:a:0', 'aac']),
+    );
+    expect(main(converted).args).not.toContain('copy');
+
+    // Already H.264 and AAC: both copied, nothing re-encoded.
+    const copied = plan([h264]);
+    expect(main(copied).args).toEqual(expect.arrayContaining(['-c:v:0', 'copy', '-c:a:0', 'copy']));
+    expect(main(copied).args).not.toContain('libx264');
+    expect(converted.cost).toBeGreaterThan(copied.cost * 10);
+
+    expect(errorOf(() => plan([{ ...h264, container: 'webm' }])).message).toMatch(
+      /webm cannot hold h264/,
+    );
+    expect(errorOf(() => plan([{ op: 'scale', height: 720 }, h264], youtube4k)).message).toMatch(
+      /untouched input/,
+    );
+  });
+
   it('drains analysis branches into a null output and parses them from the log', () => {
     const stage = main(
       plan([{ op: 'loudness' }, { op: 'silence_detect' }, { op: 'scene_changes', threshold: 0.4 }]),

@@ -293,7 +293,7 @@ describe('process jobs: recipes on worker-ff (Postgres + Redis + ffmpeg 8.1)', (
       const list = (await api('GET', '/v1/recipes')).json<{
         recipes: { name: string; builtin: boolean }[];
       }>();
-      expect(list.recipes.filter((recipe) => recipe.builtin)).toHaveLength(21);
+      expect(list.recipes.filter((recipe) => recipe.builtin)).toHaveLength(22);
       expect((await api('GET', '/v1/recipes/clip')).json()).toEqual(
         expect.objectContaining({ builtin: true, params: ['start', 'end'] }),
       );

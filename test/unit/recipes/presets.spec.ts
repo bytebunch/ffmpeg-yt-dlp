@@ -63,6 +63,7 @@ describe('built-in recipes (SPEC §8k)', () => {
         'storyboard_vtt',
         'hls_ladder',
         'archive_mkv',
+        'h264_mp4',
         'audio_waveform_video',
         'burn_subtitles',
         'loudness_report',
