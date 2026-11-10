@@ -43,7 +43,7 @@ member does something else, and that keep following channels on their own (watch
   follow progress (stage, percent, speed, ETA; per item for playlists) → download or send to Drive.
 - Upload a file (resumable) or reuse an earlier output → apply a recipe → download.
 - Watches check a channel or playlist on a schedule and download new items automatically.
-- Files are kept 7 days, then deleted.
+- Files are kept 7 days, then deleted. A member can delete their own sooner.
 - Some sites refuse the server's IP (YouTube "confirm you're not a bot", TikTok, Reddit, Vimeo login): the
   member's own cookies or site login fix it, so the app must lead there from the error.
 - The server can refuse new jobs when its disk passes the quota (`STORAGE_FULL`).

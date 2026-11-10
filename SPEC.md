@@ -118,6 +118,7 @@ agents ───MCP───┘   ▲  │ tus uploads (/u)                     
 | `GET` | `/v1/jobs/:id/log` | Sanitised tail of the yt-dlp/ffmpeg log for the job (secrets and signed URLs redacted) |
 | `POST` | `/v1/jobs/:id/retry` | Re-queue a failed job, or only the failed items of a playlist/batch |
 | `DELETE` | `/v1/jobs/:id` | Cancel (playlist/batch: cancels all pending/running items; completed items stay) |
+| `DELETE` | `/v1/jobs/:id/outputs` | Delete every file of a finished job now (playlist/batch: every item's) → `{ deleted, freed_bytes }`; `409 JOB_NOT_FINISHED` while it runs |
 
 ### Inputs
 
@@ -129,6 +130,7 @@ agents ───MCP───┘   ▲  │ tus uploads (/u)                     
 | `DELETE` | `/v1/uploads/:id` | Discard an upload |
 | `GET` | `/v1/inbox?cursor=` | Files in the client's read-only inbox folder (name, size, mtime); the inbox is `INBOX_DIR/<client>/` on the host |
 | `GET` | `/v1/outputs?cursor=` | The user's unexpired output files (reusable as inputs) |
+| `DELETE` | `/v1/outputs/:id` | Delete one of the user's files now, before it expires → `{ deleted, freed_bytes }` |
 
 ### Per-user settings
 
@@ -164,7 +166,7 @@ agents ───MCP───┘   ▲  │ tus uploads (/u)                     
 
 ### Errors
 
-Uniform shape `{ "error": { "code", "message", "details?" } }`. Stable codes: `UNSUPPORTED_SITE`, `URL_NOT_ALLOWED`, `INPUT_NOT_FOUND`, `INPUT_NOT_MEDIA`, `INPUT_FORMAT_NOT_ALLOWED`, `MEDIA_TOO_LONG`, `FILE_TOO_LARGE`, `PLAYLIST_TOO_LARGE`, `BATCH_TOO_LARGE`, `RECIPE_INVALID`, `RECIPE_TOO_EXPENSIVE`, `QUOTA_EXCEEDED`, `RATE_LIMITED`, `STORAGE_FULL`, `UPLOAD_INCOMPLETE`, `UPLOAD_EXPIRED`, `DRIVE_NOT_CONNECTED`, `DRIVE_RECONNECT_REQUIRED`, `DRIVE_STORAGE_FULL`, `DRIVE_FOLDER_NOT_ACCESSIBLE`, `MEDIA_UNAVAILABLE`, `MEDIA_PRIVATE`, `MEDIA_GEO_BLOCKED`, `MEDIA_AGE_GATED`, `LOGIN_REQUIRED`, `BOT_CHECK`, `LIVE_NOT_STARTED`, `FEATURE_DISABLED`.
+Uniform shape `{ "error": { "code", "message", "details?" } }`. Stable codes: `UNSUPPORTED_SITE`, `URL_NOT_ALLOWED`, `INPUT_NOT_FOUND`, `INPUT_NOT_MEDIA`, `INPUT_FORMAT_NOT_ALLOWED`, `MEDIA_TOO_LONG`, `FILE_TOO_LARGE`, `PLAYLIST_TOO_LARGE`, `BATCH_TOO_LARGE`, `RECIPE_INVALID`, `RECIPE_TOO_EXPENSIVE`, `QUOTA_EXCEEDED`, `RATE_LIMITED`, `STORAGE_FULL`, `UPLOAD_INCOMPLETE`, `UPLOAD_EXPIRED`, `DRIVE_NOT_CONNECTED`, `DRIVE_RECONNECT_REQUIRED`, `DRIVE_STORAGE_FULL`, `DRIVE_FOLDER_NOT_ACCESSIBLE`, `MEDIA_UNAVAILABLE`, `MEDIA_PRIVATE`, `MEDIA_GEO_BLOCKED`, `MEDIA_AGE_GATED`, `LOGIN_REQUIRED`, `BOT_CHECK`, `LIVE_NOT_STARTED`, `FEATURE_DISABLED`, `JOB_NOT_FINISHED`.
 
 Every `POST /v1/jobs` supports an `Idempotency-Key` header, scoped to `(client, user_id)` and unique for 24 h.
 
@@ -210,9 +212,11 @@ Inputs use the same Zod schemas as REST; results contain links and metadata only
 | `list_job_items` | `GET /v1/jobs/:id/items` |
 | `retry_job` | `POST /v1/jobs/:id/retry` |
 | `cancel_job` | `DELETE /v1/jobs/:id` |
+| `delete_job_outputs` | `DELETE /v1/jobs/:id/outputs` |
 | `create_upload` | `POST /v1/uploads` — the agent hands the tus URL and token to the user or client app |
 | `list_inbox` | `GET /v1/inbox` |
 | `list_outputs` | `GET /v1/outputs` |
+| `delete_output` | `DELETE /v1/outputs/:id` |
 | `set_cookies` / `list_cookies` / `delete_cookies` | `/v1/cookies` |
 | `list_archive` / `remove_archive_entry` | `/v1/archive` |
 | `create_watch` / `list_watches` / `update_watch` / `delete_watch` | `/v1/watches` |
@@ -660,6 +664,7 @@ parent = aggregate status (+ optional concat_items output, ZIP, manifests)
 - **Signed links** are HMAC-signed and valid for `FILE_TTL_DAYS` (default 7). `/d/:outputId` verifies signature and expiry and returns `X-Accel-Redirect` to an `internal` nginx location; nginx streams with Range/resume and the right `Content-Disposition`. Package links sign the output id, so one token covers every file beneath it, and the API maps the sub-path onto the internal location.
 - **Job ZIP** (`/d/job/:jobId.zip`) streams a store-only archive of all completed outputs; no extra disk, no build wait, no Range. **Manifests**: `.m3u` with every media link; the JSON manifest is `GET /v1/jobs/:id/outputs`.
 - Outputs can be **re-used as inputs** (`{ type: "output", outputId }`) until they expire; each reuse extends the file's expiry to `FILE_TTL_DAYS` from the latest use.
+- **Deleting on request:** a user deletes one of their files (`DELETE /v1/outputs/:id`) or all of a finished job's (`DELETE /v1/jobs/:id/outputs`) before they expire. Only the owner can, and not while the job, or the playlist or batch it belongs to, still runs (`409 JOB_NOT_FINISHED`): recipes, ZIPs and concat read those files. The output row goes at once, so its link answers 404; the file goes once no other output points at it (a dedup hit or reuse shares the path). A job's hidden originals go with the last file it shows. The job's own dedup entry is dropped, so the next identical download fetches anew instead of reusing a job with files missing. The Drive copy and the archive entry stay.
 - **Cleanup:** hourly job deletes expired files, orphaned temp dirs, expired uploads and input cache entries. **Disk guard:** new jobs and item starts are rejected with `503 STORAGE_FULL` above `DISK_QUOTA_PERCENT`; the estimated space of a recipe (inputs + outputs + temp, ~3× input) must fit.
 - Delivery to Drive leaves the local file in place for the TTL, so a fallback link exists and dedup works.
 

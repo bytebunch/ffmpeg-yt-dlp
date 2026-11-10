@@ -34,9 +34,11 @@ const SPEC_TOOLS = [
   'list_job_items',
   'retry_job',
   'cancel_job',
+  'delete_job_outputs',
   'create_upload',
   'list_inbox',
   'list_outputs',
+  'delete_output',
   'set_cookies',
   'list_cookies',
   'delete_cookies',
@@ -50,6 +52,10 @@ const SPEC_TOOLS = [
   'get_drive_status',
   'list_drive_files',
 ];
+
+interface Listed {
+  outputs: { id: string; job_id: string }[];
+}
 
 interface ToolResponse {
   isError?: boolean;
@@ -335,5 +341,21 @@ describe('MCP server (Postgres + Redis + workers)', () => {
       error: { code: 'VALIDATION_FAILED' },
     });
     await anonymousUser.close();
+  });
+  it('deletes one file, then the rest of its job', async () => {
+    const [file] = (await call<Listed>('list_outputs')).body.outputs;
+    expect(file).toBeDefined();
+    const one = await call('delete_output', { output_id: file?.id });
+    expect(one).toMatchObject({ error: false, body: { deleted: 1 } });
+    const left = (await call<Listed>('list_outputs')).body.outputs;
+    expect(left.map((output) => output.id)).not.toContain(file?.id);
+    const rest = await call<{ deleted: number }>('delete_job_outputs', { job_id: file?.job_id });
+    expect(rest.error).toBe(false);
+    expect(
+      (await call<Listed>('list_outputs')).body.outputs.map((output) => output.job_id),
+    ).not.toContain(file?.job_id);
+    expect((await call('delete_output', { output_id: file?.id })).body).toMatchObject({
+      error: { code: 'NOT_FOUND' },
+    });
   });
 });

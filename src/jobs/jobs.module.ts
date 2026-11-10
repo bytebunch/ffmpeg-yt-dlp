@@ -8,6 +8,8 @@ import { ArchiveController } from '../archive/archive.controller';
 import { ArchiveService } from '../archive/archive.service';
 import { CatalogController } from '../catalog/catalog.controller';
 import { LinksController } from '../links/links.controller';
+import { StoredFiles } from '../maintenance/stored-files';
+import { OutputRemoval } from '../outputs/output-removal';
 import { ItemCoordinator } from '../playlists/coordinator';
 import { RecipesController } from '../recipes/recipes.controller';
 import { RecipesService } from '../recipes/recipes.service';
@@ -29,7 +31,14 @@ import { DOWNLOAD_QUEUE, FFMPEG_QUEUE } from './queues';
     RecipesController,
     CatalogController,
   ],
-  providers: [JobsService, ItemCoordinator, RecipesService, ArchiveService],
-  exports: [JobsService, RecipesService, ArchiveService],
+  providers: [
+    JobsService,
+    ItemCoordinator,
+    RecipesService,
+    ArchiveService,
+    StoredFiles,
+    OutputRemoval,
+  ],
+  exports: [JobsService, RecipesService, ArchiveService, OutputRemoval],
 })
 export class JobsModule {}

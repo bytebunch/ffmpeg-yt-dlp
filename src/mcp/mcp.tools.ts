@@ -28,6 +28,7 @@ import {
   processJobSchema,
   recordJobSchema,
 } from '../jobs/schemas';
+import { OutputRemoval } from '../outputs/output-removal';
 import { RecipesService } from '../recipes/recipes.service';
 import { UploadsService } from '../uploads/uploads.service';
 import {
@@ -74,6 +75,7 @@ export class McpTools {
     private readonly cookies: CookiesService,
     private readonly watches: WatchesService,
     private readonly drive: DriveConnections,
+    private readonly removal: OutputRemoval,
   ) {}
 
   server(auth: AuthContext): McpServer {
@@ -204,6 +206,12 @@ export class McpTools {
       z.object({ ...jobId, ...user }),
       ({ job_id, user_id }) => this.jobs.cancel(as(user_id), job_id),
     );
+    tool(
+      'delete_job_outputs',
+      "Delete every file of a finished job now; of a playlist or batch, every item's (DELETE /v1/jobs/:id/outputs)",
+      z.object({ ...jobId, ...user }),
+      ({ job_id, user_id }) => this.removal.deleteJobOutputs(as(user_id), job_id),
+    );
 
     // Inputs
     tool(
@@ -225,6 +233,12 @@ export class McpTools {
       "The user's unexpired outputs, usable as recipe inputs (GET /v1/outputs)",
       pageSchema.extend(user),
       ({ user_id, ...query }) => this.inputs.outputs(as(user_id), query),
+    );
+    tool(
+      'delete_output',
+      "Delete one of the user's finished files now, before it expires (DELETE /v1/outputs/:id)",
+      z.object({ output_id: z.uuid().describe('Output id'), ...user }),
+      ({ output_id, user_id }) => this.removal.deleteOutput(as(user_id), output_id),
     );
 
     // Per-user settings

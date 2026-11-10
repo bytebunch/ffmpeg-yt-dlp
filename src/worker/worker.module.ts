@@ -24,6 +24,7 @@ import { bullRoot } from '../jobs/bull';
 import { DELIVERY_QUEUE, DOWNLOAD_QUEUE, FFMPEG_QUEUE } from '../jobs/queues';
 import { Cleanup } from '../maintenance/cleanup';
 import { MAINTENANCE_QUEUE, MaintenanceProcessor } from '../maintenance/maintenance.processor';
+import { StoredFiles } from '../maintenance/stored-files';
 import { ItemCoordinator } from '../playlists/coordinator';
 import { FeederTicker } from '../playlists/feeder-ticker';
 import { probeWhisper, WHISPER_SETUP } from '../recipes/capabilities';
@@ -52,6 +53,7 @@ const DOWNLOAD_PROVIDERS: Provider[] = [
   DeliveryProcessor,
   DownloadExecutor,
   DownloadProcessor,
+  StoredFiles,
   Cleanup,
   MaintenanceProcessor,
   FeederTicker,

@@ -1266,3 +1266,37 @@ VPS, but Launch's lookup (`/v1/info`) had no way to take them, so every YouTube 
   with its video packets identical), the preset in the catalogue. The integration test counting the
   built-in recipes now expects 22.
 
+## Deleting files on request (D63, 2026-11-10) ✅
+
+- `DELETE /v1/outputs/:id` deletes one of the user's files now; `DELETE /v1/jobs/:id/outputs` all of a
+  finished job's (a playlist's or batch's: every item's). Both answer `{ deleted, freed_bytes }`. MCP:
+  `delete_output`, `delete_job_outputs`. New stable code `JOB_NOT_FINISHED` (409).
+- Rules:
+  - Only the owner (client and user id), even with `share_outputs_within_client`.
+  - Not while the job, or the playlist or batch it belongs to, still runs: a `then` recipe, a ZIP or
+    `concat_items` may be reading the files.
+  - The row goes at once, so its signed link answers 404. The file goes once no other output points
+    at its path, since a dedup hit or reuse as an input shares it.
+  - A job's hidden originals (what a `then` recipe replaced) go with the last file the job shows.
+  - The job's own dedup entry is dropped. Without that, the next identical download would reuse the
+    job with its media gone and hand over only its thumbnail. An entry pointing at another job stays.
+  - The Drive copy and the download archive entry stay.
+- `StoredFiles` (`src/maintenance/stored-files.ts`) now holds the "delete a file nobody else uses"
+  logic for both the hourly cleanup and these deletes. The API container already mounts the files
+  volume read-write (it writes tus uploads), so it can delete.
+- Tests (`test/integration/inputs/output-removal.spec.ts`, against real downloads through the fake
+  yt-dlp):
+  - Another user's file: 404, and the file stays.
+  - File, row and link gone; a second delete is a 404.
+  - The next identical download fetches again.
+  - A file shared with another user's dedup hit stays until both copies are deleted.
+  - A playlist's files all go.
+  - 409 while a job or its playlist runs.
+  - Hidden originals go with the last file.
+  - Dedup entries: the job's own goes, another job's stays.
+  - The MCP spec covers both tools.
+- `pnpm check`: Prettier, ESLint and types clean; **755/755** (57 files).
+- **Found, not fixed:** `Cleanup` has `removeExpiredUploads` and `removeExpiredInputs`, but `run()` never
+  calls them, so expired tus uploads and cached URL inputs stay on disk. The report's `uploads` and
+  `inputs` counts are always 0.
+

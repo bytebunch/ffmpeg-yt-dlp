@@ -12,6 +12,7 @@ import { createDatabase, type Database } from '../../../src/db/database';
 import { runMigrations } from '../../../src/db/migrations';
 import { clients, jobLogs, jobs, mediaFiles, outputs } from '../../../src/db/schema';
 import { Cleanup, type CleanupReport } from '../../../src/maintenance/cleanup';
+import { StoredFiles } from '../../../src/maintenance/stored-files';
 import { testConfig } from '../support/app';
 import { poolFor, startPostgres } from '../support/containers';
 
@@ -33,6 +34,15 @@ describe('hourly cleanup (Postgres)', () => {
     mkdirSync(path.dirname(full), { recursive: true });
     writeFileSync(full, 'data');
     return relative;
+  };
+
+  const cleanup = () => {
+    const config = testConfig({
+      DATABASE_URL: postgres.getConnectionUri(),
+      REDIS_URL: 'redis://unused:6379',
+      FILES_DIR: filesDir,
+    });
+    return new Cleanup(config, db, new StoredFiles(config, db));
   };
 
   beforeAll(async () => {
@@ -113,14 +123,7 @@ describe('hourly cleanup (Postgres)', () => {
     work(ids.running, longAgo);
     work(uuidv7(), now);
 
-    report = await new Cleanup(
-      testConfig({
-        DATABASE_URL: postgres.getConnectionUri(),
-        REDIS_URL: 'redis://unused:6379',
-        FILES_DIR: filesDir,
-      }),
-      db,
-    ).run(now);
+    report = await cleanup().run(now);
   });
 
   afterAll(async () => {
@@ -162,14 +165,7 @@ describe('hourly cleanup (Postgres)', () => {
   });
 
   it('does nothing on a second run', async () => {
-    const again = await new Cleanup(
-      testConfig({
-        DATABASE_URL: postgres.getConnectionUri(),
-        REDIS_URL: 'redis://unused:6379',
-        FILES_DIR: filesDir,
-      }),
-      db,
-    ).run(now);
+    const again = await cleanup().run(now);
     expect(again).toEqual({
       outputs: 0,
       files: 0,

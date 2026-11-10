@@ -22,9 +22,9 @@ Launch and sign-in; the other screens show their mirrored layout with English te
 |---|---|---|
 | Launch: composer, preview, quality, options | `#launch` | `POST /v1/info`, `GET /v1/presets`, `POST /v1/jobs` (`download`, `batch`, `record`) |
 | In flight, Jobs | `#launch`, `#jobs` | `GET /v1/jobs`, `GET /v1/jobs/:id/events` (SSE) |
-| Job detail: items, files, log, details | `#job` | `GET /v1/jobs/:id`, `…/items`, `…/outputs`, `…/log`, `POST …/retry`, `DELETE /v1/jobs/:id`, `/d/job/:id.zip`, `.m3u` |
+| Job detail: items, files, log, details | `#job` | `GET /v1/jobs/:id`, `…/items`, `…/outputs`, `…/log`, `POST …/retry`, `DELETE /v1/jobs/:id`, `DELETE /v1/jobs/:id/outputs`, `DELETE /v1/outputs/:id`, `/d/job/:id.zip`, `.m3u` |
 | Tools: upload, probe, recipes | `#tools` | `POST /v1/uploads` + tus `/u/:id`, `POST /v1/probe`, `GET /v1/recipes`, `POST /v1/jobs` (`process`) |
-| Library: files, download archive | `#library` | `GET /v1/outputs`, `GET/POST/DELETE /v1/archive` |
+| Library: files, download archive | `#library` | `GET /v1/outputs`, `DELETE /v1/outputs/:id`, `GET/POST/DELETE /v1/archive` |
 | Watches | `#watches` | `/v1/watches`, `PATCH /v1/watches/:id`, `GET /v1/watches/:id/runs` |
 | Search | `#search` | `GET /v1/search` |
 | Transcripts | `#transcripts` | `POST /v1/transcripts`; Whisper via a `process` job |

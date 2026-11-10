@@ -26,6 +26,7 @@ import { z } from 'zod';
 
 import type { AuthContext } from '../auth/api-keys';
 import { Auth } from '../auth/request-auth';
+import { OutputRemoval, type Removal } from '../outputs/output-removal';
 import { JobsService, type JobView, TERMINAL_STATUSES } from './jobs.service';
 import { downloadJobSchema, listJobsQuerySchema } from './schemas';
 
@@ -45,7 +46,10 @@ const EVENT_INTERVAL_MS = 1000;
 @ApiBearerAuth()
 @Controller('v1/jobs')
 export class JobsController {
-  constructor(private readonly jobs: JobsService) {}
+  constructor(
+    private readonly jobs: JobsService,
+    private readonly removal: OutputRemoval,
+  ) {}
 
   @Post()
   @HttpCode(202)
@@ -103,6 +107,13 @@ export class JobsController {
   @HttpCode(202)
   retry(@Auth() auth: AuthContext, @Param('id') id: string): Promise<JobView> {
     return this.jobs.retry(auth, id);
+  }
+
+  /** Deletes every file of a finished job (of a playlist or batch: every item's) now. */
+  @Delete(':id/outputs')
+  @HttpCode(200)
+  deleteOutputs(@Auth() auth: AuthContext, @Param('id') id: string): Promise<Removal> {
+    return this.removal.deleteJobOutputs(auth, id);
   }
 
   @Delete(':id')

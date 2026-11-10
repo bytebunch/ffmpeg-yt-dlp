@@ -1,4 +1,4 @@
-import { readdir, rm, rmdir, stat } from 'node:fs/promises';
+import { readdir, rm, stat } from 'node:fs/promises';
 import path from 'node:path';
 
 import { Inject, Injectable, Logger } from '@nestjs/common';
@@ -8,6 +8,7 @@ import { APP_CONFIG, DATABASE } from '../common/tokens';
 import type { AppConfig } from '../config/env.schema';
 import type { Database } from '../db/database';
 import { inputs, jobLogs, jobs, mediaFiles, outputs, uploads } from '../db/schema';
+import { StoredFiles } from './stored-files';
 
 const BATCH = 1000;
 
@@ -33,6 +34,7 @@ export class Cleanup {
   constructor(
     @Inject(APP_CONFIG) private readonly config: AppConfig,
     @Inject(DATABASE) private readonly db: Database,
+    private readonly files: StoredFiles,
   ) {}
 
   async run(now: Date = new Date()): Promise<CleanupReport> {
@@ -59,18 +61,7 @@ export class Cleanup {
         ),
       );
       report.outputs += expired.length;
-      const paths = [...new Set(expired.map((output) => output.path))];
-      const stillUsed = new Set(
-        (
-          await this.db
-            .select({ path: outputs.path })
-            .from(outputs)
-            .where(inArray(outputs.path, paths))
-        ).map((row) => row.path),
-      );
-      for (const relative of paths.filter((candidate) => !stillUsed.has(candidate))) {
-        if (await this.removeFile(relative)) report.files++;
-      }
+      report.files += (await this.files.release(expired.map((output) => output.path))).length;
       if (expired.length < BATCH) break;
     }
     report.mediaFiles = (
@@ -94,29 +85,6 @@ export class Cleanup {
     if (Object.values(report).some((count) => count > 0))
       this.logger.log(report, 'Cleanup finished');
     return report;
-  }
-
-  /** Deletes FILES_DIR/<relative> and the now-empty <outputId> and <jobId> directories above it. */
-  private async removeFile(relative: string): Promise<boolean> {
-    const root = path.resolve(this.config.FILES_DIR);
-    const target = path.resolve(root, relative);
-    if (!target.startsWith(`${root}${path.sep}`)) {
-      this.logger.error({ relative }, 'Refusing to delete a path outside FILES_DIR');
-      return false;
-    }
-    await rm(target, { recursive: true, force: true });
-    for (
-      let dir = path.dirname(target);
-      dir !== root && dir.startsWith(root);
-      dir = path.dirname(dir)
-    ) {
-      try {
-        await rmdir(dir);
-      } catch {
-        break; // Not empty: other outputs of the job remain.
-      }
-    }
-    return true;
   }
 
   /** Expired uploads (SPEC §4: unused uploads after UPLOAD_TTL_HOURS): the file and tus metadata. */
@@ -146,7 +114,7 @@ export class Cleanup {
       ).map((row) => row.path),
     );
     for (const relative of paths.filter((candidate) => !stillUsed.has(candidate)))
-      await this.removeFile(relative);
+      await this.files.remove(relative);
     return expired.length;
   }
 
