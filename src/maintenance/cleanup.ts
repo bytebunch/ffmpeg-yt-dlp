@@ -23,9 +23,10 @@ export interface CleanupReport {
 }
 
 /**
- * Hourly cleanup (SPEC §10): expired outputs and their files, expired dedup entries, orphaned
- * work directories and old job logs. A file is deleted only when no unexpired output still
- * points at it, because dedup hits and reuse share files between outputs.
+ * Hourly cleanup (SPEC §10): expired outputs and their files, expired dedup entries, expired
+ * uploads and cached inputs, orphaned work directories and old job logs. A file is deleted only
+ * when no unexpired output still points at it, because dedup hits and reuse share files between
+ * outputs.
  */
 @Injectable()
 export class Cleanup {
@@ -70,6 +71,11 @@ export class Cleanup {
         .where(lte(mediaFiles.expiresAt, now))
         .returning({ id: mediaFiles.id })
     ).length;
+    // Neither a cache hit nor using an upload extends its expiry, so a job may still be reading
+    // one it resolved just before: they go once they have been expired longer than a job can run.
+    const unused = this.unusedSince(now);
+    report.uploads = await this.removeExpiredUploads(unused);
+    report.inputs = await this.removeExpiredInputs(unused);
     report.workDirs = await this.removeOrphanedWorkDirs(now);
     const logCutoff = new Date(now.getTime() - this.config.FILE_TTL_DAYS * 86_400_000);
     const oldJobs = this.db
@@ -87,24 +93,29 @@ export class Cleanup {
     return report;
   }
 
+  /** The moment before which no running job can have started: the job timeout plus an hour. */
+  private unusedSince(now: Date): Date {
+    return new Date(now.getTime() - (this.config.JOB_TIMEOUT_MINUTES + 60) * 60_000);
+  }
+
   /** Expired uploads (SPEC §4: unused uploads after UPLOAD_TTL_HOURS): the file and tus metadata. */
-  private async removeExpiredUploads(now: Date): Promise<number> {
+  private async removeExpiredUploads(before: Date): Promise<number> {
     const expired = await this.db
       .delete(uploads)
-      .where(lte(uploads.expiresAt, now))
+      .where(lte(uploads.expiresAt, before))
       .returning({ path: uploads.path });
     for (const upload of expired) {
-      const file = path.join(this.config.FILES_DIR, upload.path);
-      await Promise.all([rm(file, { force: true }), rm(`${file}.json`, { force: true })]);
+      await this.files.remove(upload.path, { pruneParents: false });
+      await this.files.remove(`${upload.path}.json`, { pruneParents: false });
     }
     return expired.length;
   }
 
   /** Cached URL inputs past INPUT_CACHE_HOURS; a file goes once no cache entry points at it. */
-  private async removeExpiredInputs(now: Date): Promise<number> {
+  private async removeExpiredInputs(before: Date): Promise<number> {
     const expired = await this.db
       .delete(inputs)
-      .where(lte(inputs.expiresAt, now))
+      .where(lte(inputs.expiresAt, before))
       .returning({ path: inputs.path });
     const paths = [...new Set(expired.map((input) => input.path))];
     if (paths.length === 0) return 0;
@@ -114,7 +125,7 @@ export class Cleanup {
       ).map((row) => row.path),
     );
     for (const relative of paths.filter((candidate) => !stillUsed.has(candidate)))
-      await this.files.remove(relative);
+      await this.files.remove(relative, { pruneParents: false });
     return expired.length;
   }
 
@@ -127,7 +138,7 @@ export class Cleanup {
     } catch {
       return 0;
     }
-    const cutoff = now.getTime() - (this.config.JOB_TIMEOUT_MINUTES + 60) * 60_000;
+    const cutoff = this.unusedSince(now).getTime();
     const old: string[] = [];
     for (const name of names) {
       const { mtimeMs } = await stat(path.join(workRoot, name)).catch(() => ({

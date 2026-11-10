@@ -10,7 +10,15 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { uuidv7 } from '../../../src/common/ids';
 import { createDatabase, type Database } from '../../../src/db/database';
 import { runMigrations } from '../../../src/db/migrations';
-import { clients, jobLogs, jobs, mediaFiles, outputs } from '../../../src/db/schema';
+import {
+  clients,
+  inputs,
+  jobLogs,
+  jobs,
+  mediaFiles,
+  outputs,
+  uploads,
+} from '../../../src/db/schema';
 import { Cleanup, type CleanupReport } from '../../../src/maintenance/cleanup';
 import { StoredFiles } from '../../../src/maintenance/stored-files';
 import { testConfig } from '../support/app';
@@ -123,6 +131,49 @@ describe('hourly cleanup (Postgres)', () => {
     work(ids.running, longAgo);
     work(uuidv7(), now);
 
+    // tus keeps <id>.json beside each upload. `past` is an hour ago: expired, but a job may still
+    // be reading what it resolved just before (the grace period is the job timeout plus an hour).
+    const tus = (name: string) => {
+      file(`.uploads/${name}.json`);
+      return file(`.uploads/${name}`);
+    };
+    const upload = (relative: string, expiresAt: Date) => ({
+      clientId,
+      userId: 'u',
+      filename: 'clip.mp4',
+      declaredSize: 4,
+      path: relative,
+      expiresAt,
+    });
+    await db
+      .insert(uploads)
+      .values([
+        upload(tus('old'), longAgo),
+        upload(tus('just-expired'), past),
+        upload(tus('open'), future),
+        upload(path.relative(filesDir, outside), longAgo),
+      ]);
+    const input = (relative: string, expiresAt: Date, hash: string) => ({
+      clientId,
+      userId: 'u',
+      type: 'url',
+      source: {},
+      sourceHash: hash,
+      contentHash: hash,
+      path: relative,
+      sizeBytes: 4,
+      expiresAt,
+    });
+    const sharedInput = file('.inputs/shared');
+    await db
+      .insert(inputs)
+      .values([
+        input(file('.inputs/old'), longAgo, 'h1'),
+        input(sharedInput, longAgo, 'h2'),
+        input(sharedInput, future, 'h3'),
+        input(file('.inputs/just-expired'), past, 'h4'),
+      ]);
+
     report = await cleanup().run(now);
   });
 
@@ -157,6 +208,28 @@ describe('hourly cleanup (Postgres)', () => {
     expect(report.workDirs).toBe(1);
     expect(existsSync(path.join(filesDir, '.work', ids.stale))).toBe(false);
     expect(existsSync(path.join(filesDir, '.work', ids.running))).toBe(true);
+  });
+
+  it('deletes uploads expired for longer than a job can run, with their tus metadata', async () => {
+    expect(report.uploads).toBe(2);
+    expect(existsSync(path.join(filesDir, '.uploads', 'old'))).toBe(false);
+    expect(existsSync(path.join(filesDir, '.uploads', 'old.json'))).toBe(false);
+    for (const kept of ['just-expired', 'just-expired.json', 'open', 'open.json']) {
+      expect(existsSync(path.join(filesDir, '.uploads', kept)), kept).toBe(true);
+    }
+    expect(
+      (await db.select({ path: uploads.path }).from(uploads)).map((row) => row.path).sort(),
+    ).toEqual(['.uploads/just-expired', '.uploads/open']);
+  });
+
+  it('deletes cached inputs expired for longer than a job can run, unless another entry has the file', async () => {
+    expect(report.inputs).toBe(2);
+    expect(existsSync(path.join(filesDir, '.inputs', 'old'))).toBe(false);
+    expect(existsSync(path.join(filesDir, '.inputs', 'shared'))).toBe(true);
+    expect(existsSync(path.join(filesDir, '.inputs', 'just-expired'))).toBe(true);
+    expect(
+      (await db.select({ hash: inputs.contentHash }).from(inputs)).map((row) => row.hash).sort(),
+    ).toEqual(['h3', 'h4']);
   });
 
   it('purges logs of jobs finished longer than FILE_TTL_DAYS ago', async () => {

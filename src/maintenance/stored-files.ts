@@ -50,8 +50,11 @@ export class StoredFiles {
     return removed;
   }
 
-  /** Deletes FILES_DIR/<relative> and the now-empty <outputId> and <jobId> directories above it. */
-  async remove(relative: string): Promise<boolean> {
+  /**
+   * Deletes FILES_DIR/<relative> and, unless `pruneParents` is false, the now-empty <outputId> and
+   * <jobId> directories above it. Flat stores (.uploads, .inputs) keep their directory.
+   */
+  async remove(relative: string, { pruneParents = true } = {}): Promise<boolean> {
     const root = path.resolve(this.config.FILES_DIR);
     const target = path.resolve(root, relative);
     if (!target.startsWith(`${root}${path.sep}`)) {
@@ -59,6 +62,7 @@ export class StoredFiles {
       return false;
     }
     await rm(target, { recursive: true, force: true });
+    if (!pruneParents) return true;
     for (
       let dir = path.dirname(target);
       dir !== root && dir.startsWith(root);
