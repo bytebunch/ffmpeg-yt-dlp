@@ -44,6 +44,12 @@ case $1 in
   create) echo bundle-container ;;
   cp) cp -R "$FIXTURE_BUNDLE/." "$3" ;;
   inspect) echo healthy ;;
-  pull | tag | rm) ;;
+  pull) # STUB_PULL_ERROR fails it with that line on stderr, after progress on stdout, as docker does.
+    if [[ -n ${STUB_PULL_ERROR:-} ]]; then
+      echo "main: Pulling from acme/media-service"
+      echo "$STUB_PULL_ERROR" >&2
+      exit 1
+    fi ;;
+  tag | rm) ;;
   *) exit 1 ;;
 esac

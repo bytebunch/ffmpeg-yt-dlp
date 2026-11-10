@@ -1296,7 +1296,36 @@ VPS, but Launch's lookup (`/v1/info`) had no way to take them, so every YouTube 
   - Dedup entries: the job's own goes, another job's stays.
   - The MCP spec covers both tools.
 - `pnpm check`: Prettier, ESLint and types clean; **755/755** (57 files).
-- **Found, not fixed:** `Cleanup` has `removeExpiredUploads` and `removeExpiredInputs`, but `run()` never
-  calls them, so expired tus uploads and cached URL inputs stay on disk. The report's `uploads` and
-  `inputs` counts are always 0.
+
+## Expired uploads and cached inputs are cleaned up (D64, 2026-11-10) ✅
+
+- **Bug:** since the first commit, `Cleanup.run()` never called `removeExpiredUploads` or
+  `removeExpiredInputs`. Expired tus uploads (and their `.json`) and cached URL inputs stayed on disk
+  for good, and the report's `uploads` and `inputs` were always 0. The step 4 entry above said they
+  were removed.
+- **Fix:** both run hourly, with a grace period. Using an upload or a cache hit doesn't extend its
+  expiry, so a job could be reading one that has just expired. They go once expired for longer than
+  `JOB_TIMEOUT_MINUTES` + 1 h, the same margin orphaned work directories already had.
+- Both go through `StoredFiles.remove`, which refuses paths outside `FILES_DIR` (the upload code had
+  no such guard). `pruneParents: false` keeps the flat `.uploads` and `.inputs` directories.
+- Test first (`cleanup.spec.ts`): long-expired uploads go with their tus metadata; a just-expired one
+  and an open one stay; a row pointing outside `FILES_DIR` deletes nothing. Long-expired inputs go,
+  except a file a live cache entry still has; a just-expired one stays. Both failed before the fix
+  (0 removed, 2 expected).
+
+## install.sh says why a pull failed (2026-11-10) ✅
+
+- Command output goes to `/var/log/media-install.log` only, so a failed `docker pull` showed just
+  "Private images need GH_TOKEN", even for a public image and a tag that didn't exist. That happened
+  on 2026-11-10 with a mistyped sha.
+- `pull_image` now ends with Docker's last line and advice that fits it:
+  - "not found": no image has that tag, so give `deploy.sh` the full 40-character sha.
+  - "denied" or "unauthorized" without GH_TOKEN: a private image needs GH_TOKEN; for a public one,
+    `docker logout <registry>` clears an old login.
+  - The same with GH_TOKEN: the token can't read the image (`read:packages`).
+  - A full disk.
+  - Anything else: the network, with the log's path.
+- Tests first: the docker stub fails a pull with `STUB_PULL_ERROR`. Four bats cases cover the reason,
+  the advice and that `.env` isn't written. `deploy/tests/run.sh` passes: shellcheck clean, bats
+  77/77 (with the firewall suite), nginx and compose checks.
 

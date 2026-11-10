@@ -303,16 +303,42 @@ registry_login() {
   docker login "$registry" --username "$user" --password-stdin <<<"$GH_TOKEN" >/dev/null
 }
 
+# What to do about a failed pull, from the last line Docker printed.
+pull_advice() {  # <reason>
+  local registry=${MEDIA_IMAGE%%/*}
+  case ${1,,} in
+    *"not found"* | *"manifest unknown"*)
+      echo "No image is tagged $MEDIA_VERSION. Give deploy.sh the full 40-character git sha of a commit whose CI run published the image (or main)." ;;
+    *denied* | *unauthorized* | *"authentication required"*)
+      if [[ -n $GH_TOKEN ]]; then
+        echo "GH_TOKEN can't read this image: it needs the read:packages scope and access to the package."
+      else
+        echo "A private image needs GH_TOKEN (DEPLOY-QUICKSTART.md). A public one is refused like this when an old login is saved: run docker logout $registry and try again."
+      fi ;;
+    *"no space left"*)
+      echo "The disk is full: check df -h /var/lib/docker." ;;
+    *)
+      echo "Check the network (can this server reach $registry?) and the disk space. Details: $LOG_FILE" ;;
+  esac
+}
+
 # The token goes to curl on stdin, so it never appears in the process list.
 github_login() {  # <token>
   curl -fsS -H @- https://api.github.com/user <<<"Authorization: token $1" \
     | sed -n 's/.*"login": *"\([^"]*\)".*/\1/p' | head -n 1
 }
 
+# Docker's output goes to the log like everything else, so the error carries its reason.
 pull_image() {
-  local ref="$MEDIA_IMAGE:$MEDIA_VERSION"
+  local ref="$MEDIA_IMAGE:$MEDIA_VERSION" output status=0 reason
   log "Pulling $ref (this can take a few minutes)"
-  docker pull "$ref" || die "Could not pull $ref. Private images need GH_TOKEN (DEPLOY-QUICKSTART.md)."
+  output=$(docker pull "$ref" 2>&1) || status=$?
+  printf '%s\n' "$output"
+  if (( status != 0 )); then
+    reason=$(awk 'NF { line = $0 } END { print line }' <<<"$output")
+    die "Could not pull $ref: $reason
+       $(pull_advice "$reason")"
+  fi
   RELEASE=$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "$ref")
   [[ $RELEASE =~ ^[0-9a-f]{7,40}$ ]] || die "$ref has no git revision label (org.opencontainers.image.revision)."
   docker tag "$ref" "$MEDIA_IMAGE:$RELEASE"

@@ -35,6 +35,17 @@ first_install() {
   [ "$status" -eq 0 ]
 }
 
+# A first install whose image pull fails with that line from Docker; the output must carry it.
+pull_fails_with() {  # <docker's error line> [extra environment assignments]
+  local error=$1
+  shift
+  run_installer MEDIA_DIR="$MEDIA" MEDIA_IMAGE=ghcr.io/acme/media-service MEDIA_VERSION=9f25493 \
+    STUB_PULL_ERROR="$error" "$@"
+  [ "$status" -eq 1 ]
+  [[ $output == *"ERROR: Could not pull ghcr.io/acme/media-service:9f25493: $error"* ]]
+  [ ! -e "$MEDIA/.env" ]
+}
+
 call_line() {  # <pattern>: line number of the first recorded call matching pattern
   grep -n -- "$1" "$CALLS_LOG" | head -n 1 | cut -d: -f1
 }
@@ -387,6 +398,36 @@ LISTEN 0 4096 [fd7a:115c:a1e0::782c:4a7e]%tailscale0:3000 [::]:* users:(("tailsc
   grep -q "docker login received ${#token} bytes on stdin" "$CALLS_LOG"
   run grep -l "$token" "$CALLS_LOG" /var/log/media-install.log
   [ "$status" -eq 1 ] && [ -z "$output" ]
+}
+
+# --- a failed pull -------------------------------------------------------------------------------
+# Command output goes to the log only, so the error must carry Docker's reason to the terminal.
+
+@test "a tag that doesn't exist is named, and the full git sha asked for" {
+  pull_fails_with 'Error response from daemon: failed to resolve reference "ghcr.io/acme/media-service:9f25493": ghcr.io/acme/media-service:9f25493: not found'
+  [[ $output == *"No image is tagged 9f25493"* ]]
+  [[ $output == *"full 40-character git sha"* ]]
+  [[ $output != *GH_TOKEN* ]]
+}
+
+@test "a refused pull without GH_TOKEN points at GH_TOKEN and at a stale registry login" {
+  pull_fails_with 'Error response from daemon: Head "https://ghcr.io/v2/acme/media-service/manifests/9f25493": denied: denied'
+  [[ $output == *"A private image needs GH_TOKEN"* ]]
+  [[ $output == *"docker logout ghcr.io"* ]]
+}
+
+@test "a refused pull with GH_TOKEN says the token can't read the image" {
+  pull_fails_with 'Error response from daemon: Head "https://ghcr.io/v2/acme/media-service/manifests/9f25493": unauthorized' \
+    GH_TOKEN=ghp_testtoken1234567890
+  [[ $output == *"GH_TOKEN can't read this image"* ]]
+  [[ $output == *"read:packages"* ]]
+  [[ $output != *ghp_testtoken1234567890* ]]
+}
+
+@test "any other failed pull names the reason and where to look" {
+  pull_fails_with 'Error response from daemon: Get "https://ghcr.io/v2/": dial tcp: lookup ghcr.io: no such host'
+  [[ $output == *"can this server reach ghcr.io"* ]]
+  [[ $output != *GH_TOKEN* ]]
 }
 
 @test "an existing Docker daemon.json is kept and Docker is not restarted" {
