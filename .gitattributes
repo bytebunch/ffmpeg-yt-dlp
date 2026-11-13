@@ -1,3 +1,6 @@
 # LF in every checkout, Windows included: deploy files are mounted into Linux containers
 # (backup.sh runs in one), where a CRLF shell script fails.
 * text=auto eol=lf
+# Except batch files: cmd.exe misreads one without CRLF line endings.
+*.cmd text eol=crlf
+*.bat text eol=crlf

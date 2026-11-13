@@ -189,7 +189,7 @@ On a Windows PC, `install-windows.ps1` does what `install.sh` does, with Docker 
 
 1. Install Docker Desktop and start it. In its Settings › General, turn on **Start Docker Desktop when you sign in**. If the PC should keep serving, set Windows to never sleep.
 2. Clone the repository: in GitHub Desktop, File › Clone repository › URL `https://github.com/bytebunch/ffmpeg-yt-dlp`, or `git clone`.
-3. In the clone's `deploy` folder, right-click `install-windows.ps1` › **Run with PowerShell**. Or, from a PowerShell window in that folder: `powershell -ExecutionPolicy Bypass -File .\install-windows.ps1`. Windows refuses to run scripts by default, and `-ExecutionPolicy Bypass` lifts that for this one run, as Run with PowerShell does.
+3. In the clone's `deploy` folder, double-click `install-windows.cmd`. It runs `install-windows.ps1` with `-ExecutionPolicy Bypass`, because Windows disables scripts by default, and keeps its window open at the end. On many PCs, right-click › Run with PowerShell closes at once for the same reason.
 
 The script:
 
@@ -202,15 +202,15 @@ The script:
 
 The service is then at `http://127.0.0.1:8085` on that PC.
 
-Options, after that command in a PowerShell window: `-PublicUrl <address>`, `-Models fast,balanced,accurate|none`, `-Version <git SHA>`, `-HttpPort <port>`, `-ProjectName <name>`.
+Options go after it, from a Command Prompt or PowerShell window in that folder, for example `.\install-windows.cmd -PublicUrl https://example.com/ffmpeg`: `-PublicUrl <address>`, `-Models "fast,balanced,accurate"` (in quotes when there are several) or `-Models none`, `-Version <git SHA>`, `-HttpPort <port>`, `-ProjectName <name>`.
 
 **Back up `.env`.** It holds the encryption key for the cookies and logins stored on the server. The other local files in `deploy` (`docker-compose.override.yml`, `models`, `backups`, `inbox`, `certs`, `.release-history`) are ignored by git, so they stay out of commits.
 
-**Opening it up.** Put your reverse proxy in front of `127.0.0.1:8085` (see "Opening it up" above). Then give the service the address you use, so that links carry it: set `PUBLIC_BASE_URL=https://example.com/ffmpeg` in `.env` and run the script again, or in one step from a PowerShell window, `powershell -ExecutionPolicy Bypass -File .\install-windows.ps1 -PublicUrl https://example.com/ffmpeg`.
+**Opening it up.** Put your reverse proxy in front of `127.0.0.1:8085` (see "Opening it up" above). Then give the service the address you use, so that links carry it: set `PUBLIC_BASE_URL=https://example.com/ffmpeg` in `.env` and double-click `install-windows.cmd` again, or in one step, `.\install-windows.cmd -PublicUrl https://example.com/ffmpeg`.
 
-**Update.** Pull the repository (GitHub Desktop: Fetch origin, then Pull), then run `install-windows.ps1` again. It keeps `.env` and the volumes, and sets the new release. If it says no image is tagged yet, CI is still publishing that commit: wait a few minutes and run it again.
+**Update.** Pull the repository (GitHub Desktop: Fetch origin, then Pull), then double-click `install-windows.cmd` again. It keeps `.env` and the volumes, and sets the new release. If it says no image is tagged yet, CI is still publishing that commit: wait a few minutes and run it again.
 
-**Coming from a manual setup.** Copy `.env` and `docker-compose.override.yml` into the clone's `deploy` folder, then run the script. The data stays: it lives in Docker volumes named after the project (`media_media-pgdata` and the others), not in the folder.
+**Coming from a manual setup.** Copy `.env` and `docker-compose.override.yml` into the clone's `deploy` folder, then double-click `install-windows.cmd`. The data stays: it lives in Docker volumes named after the project (`media_media-pgdata` and the others), not in the folder.
 
 **Day to day.** In Docker Desktop, Containers › **media** starts, stops and restarts the stack, and shows each container's logs. To create another API key, open Containers › media › **api** › **Exec** and type `cli keys:create <name> --quiet`.
 

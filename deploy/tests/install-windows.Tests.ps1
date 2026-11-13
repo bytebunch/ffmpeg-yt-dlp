@@ -3,7 +3,8 @@
 # Run with deploy/tests/pester.ps1, on Linux (deploy/tests/run.sh) and on Windows (CI).
 
 BeforeDiscovery {
-    $script:HaveBash = $env:OS -ne 'Windows_NT' -and [bool](Get-Command bash -ErrorAction SilentlyContinue)
+    $script:OnWindows = $env:OS -eq 'Windows_NT'
+    $script:HaveBash = -not $script:OnWindows -and [bool](Get-Command bash -ErrorAction SilentlyContinue)
 }
 
 BeforeAll {
@@ -19,6 +20,27 @@ BeforeAll {
     function Write-Text([string]$Path, [string]$Text) {
         New-Item -ItemType Directory -Force -Path (Split-Path -Parent $Path) | Out-Null
         [IO.File]::WriteAllText($Path, $Text, (New-Object System.Text.UTF8Encoding $false))
+    }
+}
+
+Describe 'install-windows.cmd, the double-click launcher' {
+    It 'has CRLF line endings in every checkout, since cmd.exe misreads a batch file without them' {
+        $text = [IO.File]::ReadAllText((Join-Path $Deploy 'install-windows.cmd'))
+        $text | Should -Match "`r`n"
+        $text -replace "`r`n", '' | Should -Not -Match "`n"
+    }
+
+    It 'runs the script with its arguments, shows why it stopped and keeps the exit code' -Skip:(-not $OnWindows) {
+        Push-Location -LiteralPath $Deploy
+        try {
+            # cmd merges the script's error into its output; NUL answers the closing pause.
+            $output = & cmd.exe /d /c 'install-windows.cmd -PublicUrl ftp://bad.example 2>&1 <NUL'
+            $code = $LASTEXITCODE
+        } finally {
+            Pop-Location
+        }
+        $code | Should -Be 1
+        ($output -join "`n") | Should -Match 'ERROR: -PublicUrl must be http\(s\)'
     }
 }
 

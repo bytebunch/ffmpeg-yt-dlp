@@ -1,12 +1,12 @@
 <#
 Sets up, or updates, the Media Service on Windows with Docker Desktop, from a clone of the
-repository. Right-click this file > Run with PowerShell, or from PowerShell in this folder (Windows
-refuses to run scripts by default; -ExecutionPolicy Bypass lifts that for this one run, as Run with
-PowerShell does):
+repository. Double-click install-windows.cmd next to it, which runs this with -ExecutionPolicy
+Bypass (Windows disables scripts by default) and keeps the window open. With options, from a
+Command Prompt or PowerShell window in this folder:
 
-  powershell -ExecutionPolicy Bypass -File .\install-windows.ps1     first install; after a pull, the update
-    ... -PublicUrl https://example.com/ffmpeg      the address clients use
-    ... -Models fast,balanced                      whisper models: fast, balanced, accurate, none
+  .\install-windows.cmd                                       first install; after a pull, the update
+  .\install-windows.cmd -PublicUrl https://example.com/ffmpeg     the address clients use
+  .\install-windows.cmd -Models "fast,balanced"               whisper models: fast, balanced, accurate, none
 
 install.sh does this on a Linux server. Here Docker Desktop runs the containers, with these
 differences: the database, Redis and the files live in Docker volumes (Postgres refuses a Windows
@@ -31,7 +31,8 @@ param(
     [int]$HttpPort = 0,
     # Docker Compose project name (first install; default media). Volumes are named after it.
     [string]$ProjectName,
-    # Don't wait for Enter at the end (for scripts; Run with PowerShell closes the window).
+    # Don't wait for Enter at the end: install-windows.cmd passes it and pauses itself, so a window
+    # stays open even when PowerShell can't start this script.
     [switch]$NoPause
 )
 

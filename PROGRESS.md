@@ -1376,6 +1376,12 @@ VPS, but Launch's lookup (`/v1/info`) had no way to take them, so every YouTube 
   - **Running it from a terminal:** the docs said `.\install-windows.ps1`, which a stock Windows refuses
     (scripts are disabled by default). They now say `powershell -ExecutionPolicy Bypass -File
     .\install-windows.ps1`. Right-click › Run with PowerShell already lifted that.
+  - **Double-click `install-windows.cmd`:** on the first real Windows PC, right-click › Run with
+    PowerShell closed at once without running the script, while `powershell -ExecutionPolicy Bypass
+    -File` worked. The launcher runs exactly that, passes its options on and keeps the window open
+    (`pause`). It must keep CRLF line endings, so `.gitattributes` gives `*.cmd` and `*.bat` CRLF.
+  - **Tests for the launcher:** it is CRLF in every checkout. On Windows, it runs the script with its
+    options, shows the error and returns exit code 1 for a bad `-PublicUrl`.
   - **`-Models fast,balanced`:** `-File` passes it as one string, so the script now splits the names
     on commas. The test came first and failed on the old code.
 - **Docs:** DEPLOY-QUICKSTART.md "Windows (Docker Desktop)" and "Under a path of an existing site"
