@@ -1,0 +1,3 @@
+# LF in every checkout, Windows included: deploy files are mounted into Linux containers
+# (backup.sh runs in one), where a CRLF shell script fails.
+* text=auto eol=lf

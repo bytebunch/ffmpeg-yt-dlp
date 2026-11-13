@@ -1329,3 +1329,50 @@ VPS, but Launch's lookup (`/v1/info`) had no way to take them, so every YouTube 
   the advice and that `.env` isn't written. `deploy/tests/run.sh` passes: shellcheck clean, bats
   77/77 (with the firewall suite), nginx and compose checks.
 
+## Behind a proxy under a path, and Windows with Docker Desktop (D65, 2026-11-14) ✅
+
+- **`PUBLIC_BASE_URL` may carry a path** (`https://win.example.com/ffmpeg`), for a reverse proxy that
+  serves the service under one and strips it.
+  - **Why it's safe:** every link the service hands out is `PUBLIC_BASE_URL` plus its own path (signed
+    links, job ZIP and m3u, HLS packages, tus URLs, the OAuth redirect URI). The Google callback
+    answers with a page, not a redirect, so nothing points at the root of the host.
+  - **The rule:** a query, fragment or credentials are refused, and a trailing slash is dropped.
+    Without a path, behaviour is as before.
+  - **Tests:** the config test now covers paths, written first and failing on the old rule. A new
+    integration test (`test/integration/http/base-path.spec.ts`) checks that a real download's links,
+    ZIP and m3u, and an upload URL, all carry `/ffmpeg` and answer once the prefix is stripped.
+- **`deploy/install-windows.ps1`:** `install.sh` for a Windows PC with Docker Desktop, run from a git
+  clone's `deploy` folder (right-click › Run with PowerShell).
+  - **First run:** writes `.env` with generated secrets, plus `docker-compose.override.yml` declaring
+    Docker volumes for the files, Postgres and Redis (Postgres refuses a Windows folder).
+  - **Every run:**
+    - downloads the whisper models from `models.sh`'s own catalog, checking each SHA-256;
+    - pulls the release the clone has checked out, read from `.git` (GitHub Desktop doesn't put git
+      on PATH);
+    - starts the stack and waits until the API is healthy;
+    - checks the API through the bundled proxy, from inside the stack, with a temporary key, retrying
+      for 30 s so the proxy's address lookup can catch up.
+  - **First run only:** creates the first API key.
+  - **Updates:** keep `.env` and only set `IMAGE_TAG`, plus `PUBLIC_BASE_URL` or the models when asked.
+  - **On an ARM PC:** it asks Docker for the amd64 build. Its pull advice tells "no build for this
+    platform" apart from "not published yet".
+  - **No egress firewall:** the service's own guard still refuses private addresses.
+- **`.gitattributes`:** LF in every checkout. Git for Windows would otherwise check out `backup.sh`
+  with CRLF, and it runs inside a Linux container. Every file in the index was already LF, so
+  nothing changed. `.gitignore` now covers what the script creates in `deploy/`.
+- **Tests:**
+  - **Pester** (`deploy/tests/install-windows.Tests.ps1`, 24 tests): `.env` editing, the secrets'
+    shapes, the model lines (compared with `models.sh env` itself), reading `.git`, the address and
+    pull checks, and the install and update flow with Docker mocked.
+  - **PSScriptAnalyzer** is clean.
+  - **Where they run:** `deploy/tests/pester.ps1` runs both from `deploy/tests/run.sh` (PowerShell
+    7.6.9 on Linux) and from a new CI job on Windows (Windows PowerShell 5.1 and PowerShell 7). The
+    image job now waits for it.
+  - **End to end, on this Mac against Docker Desktop:** a first install and an update, on the
+    published `f88bfd2` images under a separate project. The API answered 200 with the key the
+    script printed and 401 without one, and the update kept every secret and made no new key. That
+    run found the amd64 issue above. The test stack was removed afterwards.
+- **Docs:** DEPLOY-QUICKSTART.md "Windows (Docker Desktop)" and "Under a path of an existing site"
+  (an nginx `location` that strips the prefix), SPEC §13 and the quick-deploy entry, and
+  `.env.example`.
+

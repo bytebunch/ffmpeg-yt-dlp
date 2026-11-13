@@ -89,16 +89,26 @@ describe('loadConfig', () => {
     expect(problems({ BACKUP_ENABLED: 'maybe' })[0]).toMatch(/^BACKUP_ENABLED:/);
   });
 
-  it('normalises PUBLIC_BASE_URL to an origin and rejects paths', () => {
-    expect(
-      loadConfig({ ...required, PUBLIC_BASE_URL: 'https://dl.example.com/' }).PUBLIC_BASE_URL,
-    ).toBe('https://dl.example.com');
-    expect(
-      loadConfig({ ...required, PUBLIC_BASE_URL: 'http://1.2.3.4:8080' }).PUBLIC_BASE_URL,
-    ).toBe('http://1.2.3.4:8080');
-    expect(problems({ PUBLIC_BASE_URL: 'https://dl.example.com/api' })[0]).toMatch(
-      /without a path/,
+  it('takes PUBLIC_BASE_URL with or without a base path, never ending in a slash', () => {
+    const base = (value: string) =>
+      loadConfig({ ...required, PUBLIC_BASE_URL: value }).PUBLIC_BASE_URL;
+    expect(base('https://dl.example.com/')).toBe('https://dl.example.com');
+    expect(base('http://1.2.3.4:8080')).toBe('http://1.2.3.4:8080');
+    // Behind a reverse proxy that serves the service under a path and strips it.
+    expect(base('https://win.example.com/ffmpeg')).toBe('https://win.example.com/ffmpeg');
+    expect(base('https://win.example.com/media/ffmpeg//')).toBe(
+      'https://win.example.com/media/ffmpeg',
     );
+    expect(base('https://win.example.com/my files')).toBe('https://win.example.com/my%20files');
+    for (const value of [
+      'https://dl.example.com/api?x=1',
+      'https://dl.example.com/api#top',
+      'https://user:pass@dl.example.com',
+    ]) {
+      expect(problems({ PUBLIC_BASE_URL: value })[0], value).toMatch(
+        /^PUBLIC_BASE_URL: must be scheme:\/\/host\[:port\]\[\/path\]/,
+      );
+    }
     expect(problems({ PUBLIC_BASE_URL: 'ftp://dl.example.com' })[0]).toMatch(/^PUBLIC_BASE_URL:/);
   });
 

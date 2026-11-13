@@ -112,6 +112,30 @@ PUBLIC_BASE_URL=http://<server-ip>:8085
 
 then `cd /srv/media && docker compose up -d`. This is plain HTTP: API keys and signed links travel unencrypted, and Docker opens the port even if `ufw` blocks it. Use it on a private network or to try the service out. The same settings can go on the install command: `… | sudo HTTP_BIND=0.0.0.0 bash`.
 
+**Under a path of an existing site.** If your nginx serves the service under a path (`https://example.com/ffmpeg/`), strip the path on the way in and put it in `PUBLIC_BASE_URL`, so links carry it:
+
+```nginx
+location /ffmpeg/ {
+    proxy_pass http://127.0.0.1:8085/;   # the trailing slash strips /ffmpeg
+    proxy_http_version 1.1;
+    proxy_set_header Connection "";
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_buffering off;                 # streams (MCP, job events, downloads)
+    proxy_request_buffering off;         # tus uploads
+    proxy_read_timeout 3600s;
+    proxy_send_timeout 3600s;
+    client_max_body_size 0;              # the bundled proxy enforces the real limit
+}
+```
+
+```
+PUBLIC_BASE_URL=https://example.com/ffmpeg
+```
+
+Studio takes the same address in Settings › Servers.
+
 **For a quick look from your own machine**, keep the defaults and use an SSH tunnel: `ssh -L 8085:127.0.0.1:8085 <server>`, then open `http://127.0.0.1:8085/docs`. Links work through the tunnel because they point at `127.0.0.1:8085`.
 
 ---
@@ -151,3 +175,42 @@ cd /srv/media && sudo ./deploy.sh <git-sha>                                     
 ```
 
 Previous versions are listed in `/srv/media/.release-history`. Check for running live recordings before updating, because a restart cuts them short.
+
+---
+
+## Windows (Docker Desktop)
+
+On a Windows PC, `install-windows.ps1` does what `install.sh` does, with Docker Desktop running the same containers. An Intel or AMD PC runs them natively; on an ARM PC the script asks for the amd64 build, which Docker runs emulated and more slowly. Two things differ from a server:
+
+- The database, Redis and the downloaded files live in Docker volumes, because Postgres refuses a data folder on a Windows drive.
+- There is no egress firewall. The service's own guard still refuses private addresses.
+
+**Set up**
+
+1. Install Docker Desktop and start it. In its Settings › General, turn on **Start Docker Desktop when you sign in**. If the PC should keep serving, set Windows to never sleep.
+2. Clone the repository: in GitHub Desktop, File › Clone repository › URL `https://github.com/bytebunch/ffmpeg-yt-dlp`, or `git clone`.
+3. In the clone's `deploy` folder, right-click `install-windows.ps1` › **Run with PowerShell**. From a PowerShell window in that folder: `.\install-windows.ps1`.
+
+The script:
+
+- checks Docker Desktop;
+- writes `.env` with generated secrets, and `docker-compose.override.yml` declaring the volumes;
+- downloads the whisper models (about 920 MB, checked against their SHA-256; `-Models fast` or `-Models none` for fewer);
+- pulls the release your clone has checked out and starts the stack;
+- checks the API answers through the bundled proxy;
+- prints the first API key, once.
+
+The service is then at `http://127.0.0.1:8085` on that PC.
+
+Options: `-PublicUrl <address>`, `-Models fast,balanced,accurate|none`, `-Version <git SHA>`, `-HttpPort <port>`, `-ProjectName <name>`.
+
+**Back up `.env`.** It holds the encryption key for the cookies and logins stored on the server. The other local files in `deploy` (`docker-compose.override.yml`, `models`, `backups`, `inbox`, `certs`, `.release-history`) are ignored by git, so they stay out of commits.
+
+**Opening it up.** Put your reverse proxy in front of `127.0.0.1:8085` (see "Opening it up" above). Then run `.\install-windows.ps1 -PublicUrl https://example.com/ffmpeg`, with the address you use, so that links carry it.
+
+**Update.** Pull the repository (GitHub Desktop: Fetch origin, then Pull), then run `install-windows.ps1` again. It keeps `.env` and the volumes, and sets the new release. If it says no image is tagged yet, CI is still publishing that commit: wait a few minutes and run it again.
+
+**Coming from a manual setup.** Copy `.env` and `docker-compose.override.yml` into the clone's `deploy` folder, then run the script. The data stays: it lives in Docker volumes named after the project (`media_media-pgdata` and the others), not in the folder.
+
+**Day to day.** In Docker Desktop, Containers › **media** starts, stops and restarts the stack, and shows each container's logs. To create another API key, open Containers › media › **api** › **Exec** and type `cli keys:create <name> --quiet`.
+

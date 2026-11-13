@@ -31,3 +31,16 @@ docker run --rm --privileged -v "$deploy_dir:/deploy:ro" ubuntu:24.04 bash -euo 
   echo "--- egress firewall ($(iptables --version))"
   bats /deploy/tests/firewall.bats
 '
+
+# The Windows installer (install-windows.ps1) in PowerShell 7: PSScriptAnalyzer and Pester, with
+# Docker mocked. CI also runs them on Windows, with Windows PowerShell 5.1 and PowerShell 7.
+docker run --rm -v "$deploy_dir:/deploy:ro" ubuntu:24.04 bash -euo pipefail -c '
+  apt-get update -qq >/dev/null
+  DEBIAN_FRONTEND=noninteractive apt-get install -y -qq libicu74 curl ca-certificates >/dev/null
+  arch=$(dpkg --print-architecture)
+  if [[ $arch == amd64 ]]; then arch=x64; fi
+  mkdir -p /opt/pwsh
+  curl -fsSL "https://github.com/PowerShell/PowerShell/releases/download/v7.6.9/powershell-7.6.9-linux-$arch.tar.gz" |
+    tar -xz -C /opt/pwsh
+  /opt/pwsh/pwsh -NoProfile -File /deploy/tests/pester.ps1
+'

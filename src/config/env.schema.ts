@@ -39,13 +39,21 @@ const json = <T extends z.ZodType>(shape: T) =>
     })
     .pipe(shape);
 
-const originUrl = z
+/**
+ * The address clients use, with an optional base path for a reverse proxy that serves the service
+ * under one (https://host/ffmpeg) and strips it on the way in. Links are this plus their own path,
+ * so it never ends in a slash.
+ */
+const publicBaseUrl = z
   .url({ protocol: /^https?$/, error: 'must be an http(s) URL' })
   .refine((value) => {
     const url = new URL(value);
-    return url.pathname === '/' && url.search === '' && url.hash === '';
-  }, 'must be scheme://host[:port] without a path')
-  .transform((value) => new URL(value).origin);
+    return url.search === '' && url.hash === '' && url.username === '' && url.password === '';
+  }, 'must be scheme://host[:port][/path], without a query, fragment or credentials')
+  .transform((value) => {
+    const url = new URL(value);
+    return `${url.origin}${url.pathname.replace(/\/+$/, '')}`;
+  });
 
 const encryptionKeys = z.string().transform((value, ctx) => {
   const keys = value.split(',').map((entry) => {
@@ -161,7 +169,7 @@ export const envSchema = z
     YTDLP_CACHE_DIR: absolutePath.optional(),
 
     // Infrastructure and secrets
-    PUBLIC_BASE_URL: originUrl,
+    PUBLIC_BASE_URL: publicBaseUrl,
     API_PORT: int(3000, 1, 65_535),
     WORKER_ROLE: z.enum(['download', 'ffmpeg']).optional(),
     DATABASE_URL: z.string().regex(/^postgres(ql)?:\/\/.+/, 'must be a postgres:// URL'),

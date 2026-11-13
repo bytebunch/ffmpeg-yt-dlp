@@ -10,3 +10,11 @@ coverage/
 test-results/
 playwright-report/
 readmebytahir/
+
+# What install-windows.ps1 creates when deploy/ is the stack's folder (.env is above)
+deploy/docker-compose.override.yml
+deploy/.release-history
+deploy/inbox/
+deploy/models/
+deploy/backups/
+deploy/certs/
