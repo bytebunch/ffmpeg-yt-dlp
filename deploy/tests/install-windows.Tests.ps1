@@ -85,6 +85,14 @@ Describe 'whisper models' {
         { Get-ModelEnvValue $Catalog @('vad') } | Should -Throw '*Unknown model*'
     }
 
+    It 'takes a comma list given as one string, as powershell -File passes -Models fast,balanced' {
+        $listed = Get-ModelEnvValue $Catalog @('fast', 'balanced')
+        $joined = Get-ModelEnvValue $Catalog @(' fast , balanced,')
+        $joined.FFMPEG_WHISPER_MODELS | Should -BeExactly $listed.FFMPEG_WHISPER_MODELS
+        $joined.FFMPEG_WHISPER_DEFAULT_MODEL | Should -BeExactly 'balanced'
+        (Get-ModelEnvValue $Catalog @('none,')).FFMPEG_WHISPER_MODELS | Should -BeExactly ''
+    }
+
     It 'finds the files .env refers to, once each, and refuses one outside the catalog' {
         $text = "FFMPEG_WHISPER_MODELS='{`"fast`":`"/models/ggml-base-q8_0.bin`",`"x`":`"/models/ggml-base-q8_0.bin`"}'`nFFMPEG_WHISPER_VAD_MODEL=/models/ggml-silero-v6.2.0.bin`n"
         (Get-ReferencedModel $text $Catalog).File | Should -Be @('ggml-base-q8_0.bin', 'ggml-silero-v6.2.0.bin')

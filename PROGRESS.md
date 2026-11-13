@@ -1372,6 +1372,12 @@ VPS, but Launch's lookup (`/v1/info`) had no way to take them, so every YouTube 
     published `f88bfd2` images under a separate project. The API answered 200 with the key the
     script printed and 401 without one, and the update kept every secret and made no new key. That
     run found the amd64 issue above. The test stack was removed afterwards.
+- **Fixed after the push:**
+  - **Running it from a terminal:** the docs said `.\install-windows.ps1`, which a stock Windows refuses
+    (scripts are disabled by default). They now say `powershell -ExecutionPolicy Bypass -File
+    .\install-windows.ps1`. Right-click › Run with PowerShell already lifted that.
+  - **`-Models fast,balanced`:** `-File` passes it as one string, so the script now splits the names
+    on commas. The test came first and failed on the old code.
 - **Docs:** DEPLOY-QUICKSTART.md "Windows (Docker Desktop)" and "Under a path of an existing site"
   (an nginx `location` that strips the prefix), SPEC §13 and the quick-deploy entry, and
   `.env.example`.

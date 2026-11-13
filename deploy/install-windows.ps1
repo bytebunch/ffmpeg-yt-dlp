@@ -1,10 +1,12 @@
 <#
 Sets up, or updates, the Media Service on Windows with Docker Desktop, from a clone of the
-repository. Right-click this file > Run with PowerShell, or from PowerShell in this folder:
+repository. Right-click this file > Run with PowerShell, or from PowerShell in this folder (Windows
+refuses to run scripts by default; -ExecutionPolicy Bypass lifts that for this one run, as Run with
+PowerShell does):
 
-  .\install-windows.ps1                                   first install; after git pull, the update
-  .\install-windows.ps1 -PublicUrl https://example.com/ffmpeg     the address clients use
-  .\install-windows.ps1 -Models fast                      whisper models: fast, balanced, accurate, none
+  powershell -ExecutionPolicy Bypass -File .\install-windows.ps1     first install; after a pull, the update
+    ... -PublicUrl https://example.com/ffmpeg      the address clients use
+    ... -Models fast,balanced                      whisper models: fast, balanced, accurate, none
 
 install.sh does this on a Linux server. Here Docker Desktop runs the containers, with these
 differences: the database, Redis and the files live in Docker volumes (Postgres refuses a Windows
@@ -188,9 +190,10 @@ function Get-ModelCatalog([string]$ModelsScript) {
 }
 
 # The FFMPEG_WHISPER_* values for these models, as `models.sh env` writes them: the last named is
-# the default; none or nothing turns transcription off.
+# the default; none or nothing turns transcription off. `powershell -File` passes -Models a,b as the
+# one string 'a,b', so names are split on commas here.
 function Get-ModelEnvValue($Catalog, [string[]]$Names) {
-    $chosen = @($Names | Where-Object { $_ -and $_ -ne 'none' })
+    $chosen = @($Names | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ -and $_ -ne 'none' })
     if ($chosen.Count -eq 0) {
         return [ordered]@{ FFMPEG_WHISPER_MODELS = ''; FFMPEG_WHISPER_DEFAULT_MODEL = ''; FFMPEG_WHISPER_VAD_MODEL = '' }
     }

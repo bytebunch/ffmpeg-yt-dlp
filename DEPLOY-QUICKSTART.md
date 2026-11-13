@@ -189,7 +189,7 @@ On a Windows PC, `install-windows.ps1` does what `install.sh` does, with Docker 
 
 1. Install Docker Desktop and start it. In its Settings › General, turn on **Start Docker Desktop when you sign in**. If the PC should keep serving, set Windows to never sleep.
 2. Clone the repository: in GitHub Desktop, File › Clone repository › URL `https://github.com/bytebunch/ffmpeg-yt-dlp`, or `git clone`.
-3. In the clone's `deploy` folder, right-click `install-windows.ps1` › **Run with PowerShell**. From a PowerShell window in that folder: `.\install-windows.ps1`.
+3. In the clone's `deploy` folder, right-click `install-windows.ps1` › **Run with PowerShell**. Or, from a PowerShell window in that folder: `powershell -ExecutionPolicy Bypass -File .\install-windows.ps1`. Windows refuses to run scripts by default, and `-ExecutionPolicy Bypass` lifts that for this one run, as Run with PowerShell does.
 
 The script:
 
@@ -202,11 +202,11 @@ The script:
 
 The service is then at `http://127.0.0.1:8085` on that PC.
 
-Options: `-PublicUrl <address>`, `-Models fast,balanced,accurate|none`, `-Version <git SHA>`, `-HttpPort <port>`, `-ProjectName <name>`.
+Options, after that command in a PowerShell window: `-PublicUrl <address>`, `-Models fast,balanced,accurate|none`, `-Version <git SHA>`, `-HttpPort <port>`, `-ProjectName <name>`.
 
 **Back up `.env`.** It holds the encryption key for the cookies and logins stored on the server. The other local files in `deploy` (`docker-compose.override.yml`, `models`, `backups`, `inbox`, `certs`, `.release-history`) are ignored by git, so they stay out of commits.
 
-**Opening it up.** Put your reverse proxy in front of `127.0.0.1:8085` (see "Opening it up" above). Then run `.\install-windows.ps1 -PublicUrl https://example.com/ffmpeg`, with the address you use, so that links carry it.
+**Opening it up.** Put your reverse proxy in front of `127.0.0.1:8085` (see "Opening it up" above). Then give the service the address you use, so that links carry it: set `PUBLIC_BASE_URL=https://example.com/ffmpeg` in `.env` and run the script again, or in one step from a PowerShell window, `powershell -ExecutionPolicy Bypass -File .\install-windows.ps1 -PublicUrl https://example.com/ffmpeg`.
 
 **Update.** Pull the repository (GitHub Desktop: Fetch origin, then Pull), then run `install-windows.ps1` again. It keeps `.env` and the volumes, and sets the new release. If it says no image is tagged yet, CI is still publishing that commit: wait a few minutes and run it again.
 
